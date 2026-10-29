@@ -560,9 +560,9 @@ function render(){
 
 function viewSetup(){
   return `<div class="setup">
-  <div class="eyebrow">Welcome</div>
+  <div class="eyebrow">For girls who want the next level</div>
   <h1>Run It Up</h1>
-  <p class="lede">Your daily habits, your score, your numbers. Nobody's checking it but you. Run it up.</p>
+  <p class="lede">Getting to the next level isn't one big thing. It's small things, done every day, until the score runs up and so do you. This app keeps the score. Nobody's checking it but you.</p>
   <form id="setup">
    <div class="field"><label class="f" for="s-name">Your first name</label><input id="s-name" required autocomplete="off"></div>
    <div class="field"><label class="f" for="s-age">Age group</label><select id="s-age"><option value="10U">10U</option><option value="12U">12U</option><option value="14U">14U</option><option value="HS">High school</option></select></div>
@@ -576,8 +576,8 @@ function viewStart(){
   const sec=(h,body,you)=>`<h2>${h}</h2><p>${body}</p><div class="you"><b>For you:</b> ${you}</div>`;
   return `<div class="intro">
   <div class="topbar"><div class="eyebrow">What it takes</div><button type="button" class="link quiet" data-tab-go="today">← Today</button></div>
-  <h1>The small things</h1>
-  <p class="lede">Nobody gets good in one big moment. The athletes who reach the next level win because of a bunch of small things they do every day that most people skip. None of them are hard. The hard part is doing them when nobody's watching. This app makes the small things visible so you can watch yourself stack them up.</p>
+  <h1>Run it up to the next level</h1>
+  <p class="lede">Nobody gets to the next level in one big moment. The athletes who make it get there on a bunch of small things they do every day that most people skip. None of them are hard. The hard part is doing them when nobody's watching. That's what "run it up" means here: every small thing you do is a point, and the points add up to a score that only goes one direction. Stack enough of them and the score runs up, and so do you. This is built for girls who want exactly that.</p>
   ${sec("Daily habits beat talent","Talent gets you noticed. Habits get you there. A fifteen-minute routine done every day for a year is over 90 hours of work your competition didn't do. Pick a few things you'll do every day, make them small enough that you can't talk yourself out of them, and protect them.","fifteen minutes of tee work, wall ball, pitching reps, or a Peloton stretch. Before school if you can, so it's done before the day gets busy. More is a bonus, not the expectation.")}
   ${sec("Play more than one sport","The research is clear: kids who play multiple sports through about age 14 get hurt less and are <em>more</em> likely to reach the elite level than kids who specialize early. Field hockey, gymnastics, basketball, skiing all make you a better softball player: balance, footwork, body control, and a brain that's learned a lot of different movements.","keep playing everything. Any practice in any sport counts here.")}
   ${sec("Strength is the foundation","Exit velocity, throwing velocity, pitch speed, and sprint times all come from the same place: a strong, explosive body. You can't swing hard with a weak core and you can't throw hard with weak legs. Strength training at your age is about learning to move well and building the base everything else sits on. This is the biggest thing separating varsity and college players from everyone else.","show up to both coach sessions every week. Do mobility or band work on off days, on your own.")}
@@ -598,7 +598,7 @@ function viewStart(){
   </div>
   ${sec("Your mind is a muscle too","Every athlete fails constantly. A .350 hitter fails 65% of the time. What separates people is how fast they reset. Sports psychologists teach the same few skills to pros and kids: breathe before the pitch, focus on what you control, talk to yourself like you'd talk to a teammate, and treat mistakes as information instead of verdicts. These are learnable. You practice them the same way you practice a swing.","one line of reflection a day. It takes a minute and it's how you build the reset.")}
   <h2>Own it</h2>
-  <p>The athletes who make it are the ones who wanted it themselves. Not for a coach, not for a parent. This app is yours. The score is yours. Nobody's checking it but you. Run it up.</p>
+  <p>The athletes who make it are the ones who wanted it themselves. Not for a coach, not for a parent. This app is yours. The score is yours. Nobody's checking it but you. Do the small things. Run it up. The next level is where that road goes.</p>
   <h2>How the score works</h2>
   <p>Every box is worth points. A solid day is 20 to 25. A perfect day is in the 30s. Nothing is ever negative: a bad day just doesn't add. The score really runs up through bonuses:</p>
   <ul>
