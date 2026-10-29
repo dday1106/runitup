@@ -1,0 +1,980 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Run It Up">
+<meta name="theme-color" content="#f2f4f0" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#101613" media="(prefers-color-scheme: dark)">
+<link rel="apple-touch-icon" href="icon.png">
+<link rel="icon" type="image/png" href="icon.png">
+<link rel="manifest" href="manifest.json">
+<style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}img{max-width:100%}[hidden]{display:none!important}</style>
+<title>Run It Up</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Instrument+Sans:ital,wght@0,400;0,500;0,600;1,400&display=swap">
+<style>
+/* Layout: phone-first single column, bottom tab bar, cards only on the scoreboard and metric charts. */
+:root{
+  --bg:#f2f4f0; --panel:#ffffff; --fg:#15211a; --muted:#5d6b63; --line:#d6ddd7;
+  --accent:#b24f26; --accent-ink:#ffffff; --gold:#c9961c; --green:#1e6b4a; --soft:#e7ebe6;
+  --grass-a:#dfe8d9; --grass-b:#d3dfcb; --dirt:#d9a77a; --dirt2:#c98f5e; --chalkline:#ffffff; --ballc:#f3e74a; --stitch:#c43f2b;
+  --display:"Bricolage Grotesque","Avenir Next",Helvetica,Arial,sans-serif;
+  --body:"Instrument Sans","Helvetica Neue",Helvetica,Arial,sans-serif;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#101613; --panel:#19221d; --fg:#eef2ee; --muted:#9fb0a6; --line:#2b3730;
+  --accent:#e2744a; --accent-ink:#1a0f09; --gold:#e3b23e; --green:#4fb98a; --soft:#223029;
+  --grass-a:#131b16; --grass-b:#0f1612; --dirt:#4a3528; --dirt2:#3b2a20; --chalkline:#3a4a40; --ballc:#9b9535; --stitch:#7d3324; color-scheme:dark }}
+:root[data-theme="dark"]{
+  --bg:#101613; --panel:#19221d; --fg:#eef2ee; --muted:#9fb0a6; --line:#2b3730;
+  --accent:#e2744a; --accent-ink:#1a0f09; --gold:#e3b23e; --green:#4fb98a; --soft:#223029;
+  --grass-a:#131b16; --grass-b:#0f1612; --dirt:#4a3528; --dirt2:#3b2a20; --chalkline:#3a4a40; --ballc:#9b9535; --stitch:#7d3324; color-scheme:dark }
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--body);font-size:16px;line-height:1.5;display:flex;flex-direction:column;min-height:100%;
+ background-image:repeating-linear-gradient(90deg, var(--grass-a) 0 64px, var(--grass-b) 64px 128px);background-attachment:fixed}
+.field{position:fixed;inset:0;z-index:-1;pointer-events:none;overflow:hidden}
+.field svg{position:absolute;left:50%;top:48%;width:min(140vw,980px);transform:translate(-50%,-45%)}
+.field .ball{position:absolute;right:-60px;top:-40px;width:230px;transform:rotate(-15deg);left:auto;opacity:.92}
+@media (max-width:600px){.field .ball{width:140px;right:-55px;top:-40px}}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--bg)}
+main{flex:1;padding-block:14px 24px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));max-width:560px;width:100%;margin:0 auto}
+h1,h2,h3{font-family:var(--display);text-wrap:balance;margin:0;line-height:1.1}
+h1{font-size:2rem;font-weight:800;letter-spacing:-.02em}
+h2{font-size:1.35rem;font-weight:700;margin-top:28px;margin-bottom:10px}
+h3{font-size:1.05rem;font-weight:700}
+p{margin:0 0 12px;max-width:62ch}
+.muted{color:var(--muted)}
+.eyebrow{font-size:.72rem;text-transform:uppercase;letter-spacing:.12em;color:var(--muted);font-weight:600}
+button{font:inherit;cursor:pointer}
+.btn{background:var(--accent);color:var(--accent-ink);border:0;border-radius:10px;padding:11px 16px;font-weight:600;font-family:var(--display)}
+.btn.ghost{background:transparent;color:var(--fg);border:1px solid var(--line)}
+.btn:focus-visible,.check:focus-visible,.tabbar button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+input,select,textarea{font:inherit;color:var(--fg);background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:9px 10px;width:100%}
+textarea{min-height:90px;resize:vertical}
+label.f{display:block;font-size:.85rem;color:var(--muted);margin-bottom:4px}
+.field{margin-bottom:14px}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.row>*{min-width:0}
+
+/* tab bar */
+.tabbar{position:sticky;bottom:0;display:grid;grid-template-columns:repeat(5,1fr);background:var(--panel);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom,0px);padding-left:max(10px,env(safe-area-inset-left,0px));padding-right:max(10px,env(safe-area-inset-right,0px));z-index:5}
+.tabbar button{background:none;border:0;padding:8px 2px 6px;color:var(--muted);font-size:.62rem;font-weight:600;letter-spacing:.03em;text-transform:uppercase;font-family:var(--display);display:flex;flex-direction:column;align-items:center;gap:3px;border-radius:10px}
+.tabbar svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+.tabbar button[aria-selected="true"]{color:var(--accent)}
+.tabbar button[aria-selected="true"] svg{stroke-width:2.4}
+.topbar{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.topbar .link{display:inline-flex;align-items:center;gap:6px;color:var(--accent-ink);background:var(--accent);font-size:.82rem;font-weight:700;font-family:var(--display);padding:7px 12px;border-radius:999px;letter-spacing:.02em}
+.topbar .link svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+.topbar .link.quiet{background:transparent;color:var(--muted);padding:0;font-weight:600}
+
+/* scoreboard */
+.score{background:var(--fg);color:var(--bg);border-radius:14px;padding:16px;display:grid;grid-template-columns:1.4fr 1fr 1fr;gap:10px 8px;font-variant-numeric:tabular-nums}
+.score .all{grid-column:1/-1;border-top:1px solid rgba(255,255,255,.18);padding-top:10px;display:flex;align-items:baseline;gap:10px}
+.score .big{font-family:var(--display);font-size:2.6rem;font-weight:800;line-height:1}
+.score .n{font-family:var(--display);font-size:1.3rem;font-weight:700;line-height:1.1}
+.score .l{font-size:.68rem;text-transform:uppercase;letter-spacing:.1em;opacity:.7}
+.banner{margin-top:12px;padding:12px 14px;border-radius:12px;background:var(--gold);color:#1a1200;display:grid;gap:8px;font-size:.92rem}
+.banner .btn{background:#1a1200;color:var(--gold)}
+.banner .btn.ghost{background:transparent;color:#1a1200;border-color:#1a1200}
+.month{margin-top:12px;padding:12px 14px;border:1px solid var(--line);border-radius:12px;background:var(--panel)}
+.mhead{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;align-items:baseline}
+.mbar{height:8px;background:var(--soft);border-radius:999px;overflow:hidden;margin-top:8px}
+.mbar div{height:100%;background:var(--green);border-radius:999px}
+.mline{margin-top:6px;font-size:.92rem;font-variant-numeric:tabular-nums}
+.mline .hit{color:var(--green);font-weight:600}
+.mset{margin-top:8px}
+.mset summary{cursor:pointer;color:var(--muted);font-size:.85rem}
+.mform{display:grid;gap:8px;margin-top:8px}
+.mhist div{display:grid;grid-template-columns:1fr auto auto;gap:10px;padding:5px 0;border-bottom:1px dashed var(--line);font-size:.9rem;font-variant-numeric:tabular-nums}
+.mhist div:last-child{border-bottom:0}
+.theme{margin:14px 0 4px;padding:12px 14px;border-left:4px solid var(--gold);background:var(--soft);border-radius:0 10px 10px 0}
+.theme b{font-family:var(--display)}
+
+/* habit list */
+.bucket{margin-top:22px;background:color-mix(in srgb,var(--panel) 92%,transparent);border:1px solid var(--line);border-radius:12px;padding:10px 14px 4px}
+.bucket-head{display:flex;justify-content:space-between;align-items:baseline;gap:8px;border-bottom:1px solid var(--line);padding-bottom:6px;margin-bottom:6px}
+.bucket-head .streak{font-size:.78rem;color:var(--muted);font-variant-numeric:tabular-nums}
+.item{display:flex;align-items:center;gap:12px;padding:9px 0;border-bottom:1px dashed var(--line)}
+.item:last-child{border-bottom:0}
+.check{width:28px;height:28px;border-radius:8px;border:2px solid var(--line);background:var(--panel);flex:none;display:grid;place-items:center;color:var(--accent-ink);padding:0}
+.check[aria-checked="true"]{background:var(--green);border-color:var(--green)}
+.check svg{width:16px;height:16px;display:none}
+.check[aria-checked="true"] svg{display:block}
+.item .t{flex:1;min-width:0}
+.item .t small{display:block;color:var(--muted);font-size:.8rem}
+.pts{font-family:var(--display);font-weight:700;color:var(--muted);font-variant-numeric:tabular-nums;flex:none;min-width:38px;text-align:right}
+.item.done .pts{color:var(--green)}
+.item select,.item input[type=number]{width:auto;padding:6px 8px}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.seg button{background:var(--panel);border:0;padding:6px 10px;color:var(--muted);font-size:.85rem;font-weight:600}
+.seg button[aria-pressed="true"]{background:var(--green);color:#fff}
+.bonus{margin-top:22px;padding:12px 14px;border:1px solid var(--line);border-radius:12px;background:var(--panel)}
+.bonus ul{margin:6px 0 0;padding-left:18px}
+.bonus li{font-size:.9rem}
+.bonus li.hit{color:var(--green);font-weight:600}
+.blist{display:grid;gap:4px;margin-top:6px}
+.brow{display:grid;grid-template-columns:1fr auto;gap:0 10px;padding:7px 10px;border-radius:8px;background:var(--soft);font-size:.9rem;align-items:baseline}
+.bname{font-family:var(--display);font-weight:700}
+.btier{font-family:var(--display);font-weight:700;font-size:.78rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);text-align:right}
+.bprog{font-variant-numeric:tabular-nums;color:var(--muted);font-size:.82rem;grid-column:2;text-align:right}
+.bunit{color:var(--muted);font-size:.78rem;grid-column:1;grid-row:2}
+.t-bronze .btier{color:#a5602b}.t-silver .btier{color:#7d8a94}.t-gold .btier{color:var(--gold)}.t-platinum .btier{color:#5d8aa8}.t-diamond .btier{color:#2aa7a0}
+.badges{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+.badge{font-family:var(--display);font-weight:700;font-size:.8rem;padding:4px 10px;border-radius:999px;border:1px solid var(--line);color:var(--muted)}
+.badge.on{background:var(--gold);color:#1a1200;border-color:var(--gold)}
+.daynav{display:flex;justify-content:space-between;align-items:center;margin:10px 0 2px}
+.daynav button{background:none;border:1px solid var(--line);border-radius:8px;padding:5px 10px;color:var(--fg)}
+.daynav .d{font-family:var(--display);font-weight:700}
+
+/* intro */
+.intro h2{margin-top:30px}
+.intro .you{margin-top:4px;padding:10px 12px;background:var(--soft);border-radius:8px;font-size:.95rem}
+.intro{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px 16px 20px}
+.intro h2{margin-bottom:8px}
+.intro .food div{background:var(--soft);border-color:transparent}
+.lesson{background:var(--panel);padding:10px 12px;border-radius:8px}
+.reflect-wrap{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px 16px}
+.intro .you b{color:var(--accent)}
+.lede{font-size:1.15rem;line-height:1.45}
+.rgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px 12px;margin:6px 0 4px}
+.rgrid.three{grid-template-columns:1fr 1fr 1fr}
+.rgrid div{display:flex;flex-direction:column}
+.rgrid b{font-family:var(--display);font-size:1.4rem;font-weight:800;line-height:1.1;font-variant-numeric:tabular-nums}
+.rgrid span{font-size:.8rem;color:var(--muted)}
+.pace{display:grid;grid-template-columns:1fr;gap:3px;padding:7px 0;border-bottom:1px dashed var(--line)}
+.pace:last-of-type{border-bottom:0}
+.pace .pl{display:flex;justify-content:space-between;gap:8px;font-size:.9rem}
+.pace .pl span{font-size:.8rem}
+.pbar{height:7px;background:var(--soft);border-radius:999px;overflow:hidden}
+.pbar div{height:100%;background:var(--green);border-radius:999px}
+.pace .pv{font-size:.78rem;color:var(--muted);font-variant-numeric:tabular-nums}
+.rt{padding:10px 0;border-bottom:1px dashed var(--line)}
+.rt:last-child{border-bottom:0}
+.rt-head{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.btn.small{padding:6px 10px;font-size:.82rem;flex:none}
+.bench{margin-top:16px;border:1px solid var(--line);border-radius:12px;padding:10px 14px;background:var(--panel)}
+.bench summary{cursor:pointer;font-family:var(--display);font-weight:700}
+.bench table{border-collapse:collapse;width:100%;font-size:.85rem;font-variant-numeric:tabular-nums}
+.bench th,.bench td{text-align:left;padding:6px 8px;border-bottom:1px solid var(--line);white-space:nowrap}
+.bench thead th{font-size:.72rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+.bench tbody th{font-weight:600}
+.food{display:grid;gap:8px;margin-top:10px}
+.food div{padding:10px 12px;border:1px solid var(--line);border-radius:8px;font-size:.92rem;line-height:1.5;background:var(--panel)}
+.food .eyebrow{display:block;margin-bottom:3px}
+
+/* reflect */
+.prompt{font-family:var(--display);font-size:1.3rem;font-weight:700;line-height:1.25;margin:4px 0 14px}
+.sliders{display:grid;grid-template-columns:1fr;gap:8px;margin:8px 0 16px}
+.slider{display:grid;grid-template-columns:70px 1fr 24px;gap:10px;align-items:center;font-size:.9rem}
+.slider input{padding:0}
+.entry{padding:10px 0;border-bottom:1px solid var(--line)}
+.entry .q{font-size:.8rem;color:var(--muted)}
+.gentle{margin-top:12px;padding:10px 12px;border-radius:8px;background:var(--soft);font-size:.92rem}
+.lesson{font-size:1.02rem;line-height:1.55}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{border:1px solid var(--line);background:var(--panel);color:var(--fg);border-radius:999px;padding:6px 12px;font-size:.88rem}
+.chip[aria-pressed="true"]{background:var(--green);border-color:var(--green);color:#fff}
+.chip:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+.pat{margin-top:10px;padding:10px 12px;border-radius:8px;background:var(--soft)}
+.pat div{display:flex;justify-content:space-between;gap:8px;padding:3px 0}
+.pat.up .eyebrow{color:var(--green)}
+.pat.down .eyebrow{color:var(--accent)}
+button.link{background:none;border:0;padding:0;color:var(--accent);font-weight:600;font-size:.9rem;margin-top:4px}
+
+/* numbers */
+.metric{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px;margin-top:14px}
+.metric .top{display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap}
+.metric .cur{font-family:var(--display);font-size:1.8rem;font-weight:800;font-variant-numeric:tabular-nums}
+.metric .cur small{font-size:.8rem;font-weight:500;color:var(--muted)}
+.band{font-size:.8rem;color:var(--muted);margin-top:2px}
+.band b{color:var(--fg)}
+.metric svg{width:100%;height:120px;display:block;margin-top:10px}
+.metric .add{display:grid;grid-template-columns:1fr 1fr auto;gap:8px;margin-top:10px}
+.log{font-size:.85rem;color:var(--muted);margin-top:8px}
+.log span{display:inline-block;margin-right:10px;font-variant-numeric:tabular-nums}
+.log button{background:none;border:0;color:var(--muted);padding:0 4px;font-size:.8rem}
+
+/* setup / settings */
+.setup{max-width:420px;margin:30px auto}
+details.settings{margin-top:30px;border-top:1px solid var(--line);padding-top:10px}
+details.settings summary{cursor:pointer;color:var(--muted);font-size:.9rem}
+.toast{position:fixed;left:50%;bottom:calc(70px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--fg);color:var(--bg);padding:8px 14px;border-radius:999px;font-size:.9rem;opacity:0;transition:opacity .2s;pointer-events:none}
+.toast.show{opacity:1}
+@media (prefers-reduced-motion:reduce){.toast{transition:none}}
+@media (min-width:600px){.sliders{grid-template-columns:1fr 1fr 1fr}}
+</style>
+
+</head>
+<body>
+<div class="field" aria-hidden="true">
+ <svg viewBox="0 0 1000 900" xmlns="http://www.w3.org/2000/svg">
+  <!-- outfield arc of dirt -->
+  <path d="M500 860 L120 480 A540 540 0 0 1 880 480 Z" fill="var(--dirt)" opacity=".28"/>
+  <!-- grass inside the basepaths -->
+  <path d="M500 800 L240 540 L500 280 L760 540 Z" fill="var(--grass-a)" opacity=".9"/>
+  <!-- basepath dirt -->
+  <path d="M500 860 L170 530 L500 200 L830 530 Z M500 790 L250 540 L500 290 L750 540 Z" fill="var(--dirt2)" fill-rule="evenodd" opacity=".55"/>
+  <!-- pitcher's circle (softball) -->
+  <circle cx="500" cy="540" r="86" fill="var(--dirt)" opacity=".7"/>
+  <rect x="488" y="536" width="24" height="7" fill="var(--chalkline)" opacity=".9"/>
+  <!-- foul lines -->
+  <path d="M500 850 L60 410 M500 850 L940 410" stroke="var(--chalkline)" stroke-width="6" opacity=".8"/>
+  <!-- bases -->
+  <g fill="var(--chalkline)" opacity=".95">
+   <rect x="738" y="518" width="26" height="26" transform="rotate(45 751 531)"/>
+   <rect x="487" y="268" width="26" height="26" transform="rotate(45 500 281)"/>
+   <rect x="236" y="518" width="26" height="26" transform="rotate(45 249 531)"/>
+   <path d="M482 820 L518 820 L518 836 L500 854 L482 836 Z"/>
+  </g>
+  <!-- batter's boxes -->
+  <g fill="none" stroke="var(--chalkline)" stroke-width="4" opacity=".8">
+   <rect x="430" y="800" width="36" height="60"/><rect x="534" y="800" width="36" height="60"/>
+  </g>
+ </svg>
+ <svg class="ball" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+  <defs><radialGradient id="bsh" cx="38%" cy="32%" r="70%"><stop offset="0" stop-color="#fff" stop-opacity=".55"/><stop offset=".6" stop-color="#fff" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".18"/></radialGradient>
+  <clipPath id="bc"><circle cx="100" cy="100" r="94"/></clipPath></defs>
+  <circle cx="100" cy="100" r="96" fill="var(--ballc)"/>
+  <g clip-path="url(#bc)" fill="none" stroke="var(--stitch)" stroke-linecap="round">
+   <circle cx="-30" cy="100" r="120" stroke-width="5"/>
+   <circle cx="230" cy="100" r="120" stroke-width="5"/>
+   <path d="M62.9 37.4 L76.1 28.4 M70.7 50.9 L85.0 43.9 M76.5 65.4 L91.7 60.4 M80.3 80.6 L96.1 77.8 M81.9 96.1 L97.9 95.5 M81.4 111.7 L97.3 113.4 M78.7 127.1 L94.2 131.0 M73.8 142.0 L88.7 147.9 M67.0 156.0 L80.9 164.0 M137.1 162.6 L123.9 171.6 M129.3 149.1 L115.0 156.1 M123.5 134.6 L108.3 139.6 M119.7 119.4 L103.9 122.2 M118.1 103.9 L102.1 104.5 M118.6 88.3 L102.7 86.6 M121.3 72.9 L105.8 69.0 M126.2 58.0 L111.3 52.1 M133.0 44.0 L119.1 36.0" stroke-width="3.5"/>
+  </g>
+  <circle cx="100" cy="100" r="96" fill="url(#bsh)"/>
+ </svg>
+</div>
+<main id="app"></main>
+<nav class="tabbar" id="tabbar" aria-label="Sections"></nav>
+<div class="toast" id="toast" role="status"></div>
+
+<script>
+(function(){
+"use strict";
+const LS_KEY="runitup.v1";
+const CHECK='<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 8.5l3 3 7-7"/></svg>';
+
+/* ---------- content ---------- */
+/* One lesson per day: theme, quote, a short lesson, and the reflection prompt that follows from it. 84 lessons, so it runs 12 weeks before repeating. */
+const LESSONS=[
+ {t:"Show up",q:"Half of getting better is just being there.",l:"The best athletes aren't always the most talented ones in the room. They're the ones who were in the room every single time. Showing up when you don't feel like it is a skill, and it's the one that matters most.",p:"When did you show up today even though you didn't feel like it?"},
+ {t:"Controllables",q:"Control what you can. Let the rest go.",l:"You can't control the umpire, the weather, the lineup, or whether the pitch is a strike. You can always control three things: your effort, your attitude, and the next rep. Sports psychologists teach this to pros because it's the fastest way to stop wasting energy.",p:"What was in your control today, and what wasn't?"},
+ {t:"Small things",q:"Small things, done daily, beat big things done sometimes.",l:"A fifteen-minute routine every day is over 90 hours a year. Nobody notices 90 hours in a day, but everybody notices it in a season. The trick is making the habit so small you can't talk yourself out of it.",p:"What's one small thing you did today that most people would skip?"},
+ {t:"Fuel",q:"You can't train hard on a bagel.",l:"Your body builds muscle and recovers from training out of what you eat. Protein is the raw material. Fruit and vegetables are the tools. A breakfast with no protein means a morning your body can't use.",p:"What did you eat before and after you moved today? How did it feel?"},
+ {t:"Sleep",q:"Sleep is practice for your body.",l:"Training stresses the body. Sleep is where it adapts and gets stronger. Teen athletes who get under 8 hours get hurt about twice as often. The best college athletes protect bedtime like it's a lift.",p:"How did last night's sleep show up in how you felt today?"},
+ {t:"Failure",q:"A .350 hitter fails 65% of the time.",l:"Softball is a game of failure. Every great hitter walks back to the dugout most of the time. What separates them isn't fewer failures, it's a faster reset. Mistakes are information about what to fix. They're never a verdict about who you are.",p:"What's a mistake you made today? What did it teach you?"},
+ {t:"Unwatched",q:"Nobody's watching. Do it anyway.",l:"Everybody works hard at practice with the coach looking. The gap between players opens on the days nobody is watching: the off-day bands, the extra water, the early bedtime. That's where you quietly pass people.",p:"What did you do today that nobody saw?"},
+ {t:"Self-talk",q:"Talk to yourself like you'd talk to a teammate.",l:"You'd never tell a teammate she's terrible after one strikeout. But a lot of athletes say exactly that to themselves. The voice in your head is a teammate too. Coach it to be useful: short, specific, forward-looking.",p:"What would you say to a teammate who had the day you had?"},
+ {t:"Strength",q:"Strong legs, strong core, hard throws.",l:"Exit velocity, throwing velocity, and pitch speed all come from the ground up. Legs drive, core transfers, arm finishes. That's why the strength coach matters more for your bat speed than extra swings do right now.",p:"Where did you feel strong today? Where did you feel weak?"},
+ {t:"Variety",q:"Every sport makes you better at this one.",l:"Kids who play several sports through about 14 get hurt less and are more likely to reach the elite level than kids who specialize early. Field hockey builds your footwork. Gymnastics builds body control. Basketball builds your reads. It all transfers.",p:"What did another sport or activity teach you that helps in softball?"},
+ {t:"Planning",q:"Plan the week so the week doesn't plan you.",l:"College athletes juggle practice, lifting, class, and travel. The ones who thrive aren't smarter, they plan. When you decide on Sunday when things happen, you stop re-deciding every day. Deciding is what wears people out.",p:"What's one thing you'll plan ahead for this week?"},
+ {t:"Breath",q:"Breathe before the pitch. Every pitch.",l:"One slow breath between pitches resets your nervous system. It's the single most-used tool in sports psychology because it works and it's free. In the box, in the circle, on the line: breathe, then go.",p:"When could one slow breath have helped you today?"},
+ {t:"Water",q:"Water matters more than you think.",l:"Losing just 2% of your body's water measurably slows reaction time and decision-making. That's the difference between seeing the pitch and guessing at it. Most kids are mildly dehydrated most of the time without knowing.",p:"How much did you drink today? How did your energy feel?"},
+ {t:"Ownership",q:"This score is yours.",l:"The athletes who make it to the next level are the ones who wanted it for themselves. Not for a coach, not for a parent. Nobody is checking this app but you. Every point is a choice you made.",p:"What's one thing you did today purely because you wanted to get better?"},
+ {t:"Consistency",q:"Consistency is a skill. Practice it.",l:"Anybody can have a great day. Having a decent day seven days in a row is much harder and much more valuable. Streaks aren't about perfection. They're about not letting one bad day become two.",p:"What's something you've done every day this week?"},
+ {t:"Stacking",q:"Good days add. Bad days just don't.",l:"A bad day doesn't erase a good week. In this app nothing is ever negative, and that's on purpose. Your job isn't to be perfect. It's to keep stacking. The all-time number only goes up.",p:"What did you stack on today, even if the day wasn't great?"},
+ {t:"Teammate",q:"Be the teammate you'd want.",l:"College coaches ask high school coaches one question before anything else: what's she like as a teammate? Talent gets you looked at. Being someone people want to play with gets you kept.",p:"How did you make a teammate better today?"},
+ {t:"Trust",q:"Trust the work.",l:"Confidence doesn't come from feeling confident. It comes from evidence. Every rep you log here is evidence. When the game gets tight, you don't have to hope you're ready. You can look back and know.",p:"Name a time today you trusted yourself."},
+ {t:"Focus",q:"Where your eyes go, your attention follows.",l:"Attention wanders. That's normal. The skill isn't never losing focus, it's noticing fast and bringing it back. Pick one cue, like the pitcher's hip or the seams of the ball, and return to it.",p:"When did your mind wander today, and what brought it back?"},
+ {t:"Hard things",q:"Do the hard thing first.",l:"Your energy and willpower are highest early. The thing you're dreading gets heavier the longer you carry it. Do it first and the rest of the day gets lighter.",p:"What's something hard you did today anyway?"},
+ {t:"Progress",q:"Compare yourself to last week, not to anyone else.",l:"Somebody will always be faster or hit harder. That's a fact about them, not about you. The only comparison that tells you anything is you now versus you before. That's what the charts in this app are for.",p:"What's one thing you did better today than last week?"},
+ {t:"Learning",q:"Every practice teaches something, if you're listening.",l:"Two players can go to the same practice. One leaves tired. The other leaves tired and one idea better. The difference is asking, on the way home, what did I learn?",p:"What did you learn at practice or training today?"},
+ {t:"Tomorrow",q:"Tonight decides tomorrow.",l:"Tomorrow's energy is mostly set tonight: what you ate, when the screen went off, when you went to sleep. The best athletes end the day thinking about the next one.",p:"What's one thing you'll do tonight to make tomorrow better?"},
+ {t:"Joy",q:"You get to do this.",l:"Nobody has to play softball. You get to. On the hard days it helps to remember that this is something you chose because you love it. Athletes who keep that feeling are the ones who are still playing at 20.",p:"What's something about your sport you're glad you get to do?"},
+ {t:"Warm-up",q:"The warm-up is the workout's first rep.",l:"YTWLs, arm circles, trunk twists, squats, jumping jacks. Three minutes. It's not the boring part before the real thing. It's what keeps your shoulder healthy enough to do the real thing for ten more years.",p:"Did you do the full warm-up today, or skip pieces? What would make it automatic?"},
+ {t:"Arm care",q:"Your arm is the whole career. Treat it like it.",l:"Most throwing injuries in young players come from too many throws on tired arms. Bands before, stretch after, and a day off when it aches. Pain is not toughness. Pain is information.",p:"How does your arm feel today, on a scale of 1 to 5? What did you do for it?"},
+ {t:"Soreness",q:"Sore is fine. Sharp is not.",l:"Muscle soreness a day or two after training is normal and means you're adapting. Sharp pain, pain in a joint, or pain that gets worse during a session is different. Learn the difference and speak up early. Small things caught early stay small.",p:"Anything sore today? Sore-good or sore-bad?"},
+ {t:"Hydration",q:"Drink before you're thirsty.",l:"By the time you feel thirsty you're already behind. Athletes who carry a bottle all day and sip steadily outperform ones who chug at practice. Three bottles is the target. Pale yellow is the proof.",p:"When during the day do you forget to drink? What could remind you?"},
+ {t:"Breakfast",q:"The first meal sets the engine.",l:"Skip breakfast and your body runs the morning on empty, then over-eats at night. The smoothie, eggs, Greek yogurt: anything with real protein. Twenty grams at breakfast is the difference between a sharp first period and a foggy one.",p:"What did you eat for breakfast? How did your morning feel?"},
+ {t:"Recovery window",q:"Eat within the hour.",l:"After hard training your muscles pull in nutrients faster than any other time. Protein plus some carbs within an hour rebuilds you stronger. Miss the window and you still recover, just slower. The shaker bottle exists for this.",p:"What did you eat after training today, and how long after?"},
+ {t:"Vegetables",q:"The boring food does the quiet work.",l:"Vegetables carry the vitamins and minerals your body uses to recover, fight off sickness, and keep bones strong. Nobody gets excited about broccoli. The athletes who eat it anyway get sick less and miss fewer practices.",p:"What veggie did you eat today? What's one you'd actually eat more of?"},
+ {t:"Sugar",q:"Sugar is a loan, not a gift.",l:"Candy, soda, and sweet drinks give you a quick lift and then drop you lower than you started. Fine once in a while. As fuel, they're a bad deal. Fruit gives you the sweet with the fiber that keeps the energy steady.",p:"When did you reach for sugar today? What were you actually hungry for?"},
+ {t:"Bedtime",q:"Same time, most nights.",l:"Your body runs on a clock. When bedtime bounces around, the clock drifts and sleep gets shallower even if the hours look the same. A steady bedtime on school nights is one of the easiest performance gains there is.",p:"What time did you go to bed last night? Is that your usual?"},
+ {t:"Screens",q:"The screen tells your brain it's noon.",l:"The light from a phone tells your brain the sun is up, so it holds back the sleep hormone. Thirty minutes of reading instead of scrolling before bed means you fall asleep faster and deeper. The feed will be there tomorrow.",p:"What did you do in the 30 minutes before bed last night?"},
+ {t:"Naps",q:"Twenty minutes, not two hours.",l:"A short nap after school can reset your focus. A long one steals your night's sleep and leaves you groggy. If you need to crash, set a timer for 20 minutes and get up when it goes off.",p:"Do you nap after school? How does it affect your night?"},
+ {t:"Growth",q:"You're growing. That changes everything.",l:"Between 11 and 15 your body is rebuilding itself. Coordination comes and goes, strength jumps in bursts, sleep needs go up. If a skill you had feels clumsy for a few weeks, that's growth, not going backward. Keep the reps in and it comes back better.",p:"Does anything feel different in your body lately? Stronger, clumsier, more tired?"},
+ {t:"Legs",q:"Everything starts from the ground.",l:"Hitters and pitchers both generate power from the legs and hips, then pass it up through the core and out through the hands. Squats, lunges, and jumps are not side work. They are the swing and the pitch, built from the floor up.",p:"What leg work did you do this week? How did it feel?"},
+ {t:"Core",q:"Your core is the bridge.",l:"Power from your legs has to cross your midsection to reach your arms. A weak core leaks it. Planks, med ball throws, and Pilates build the bridge. You can't see the difference in the mirror, but you can see it on the radar gun.",p:"What's one core exercise you did this week?"},
+ {t:"Balance",q:"Balance is strength you don't see.",l:"Single-leg work, landing drills, and gymnastics all train the small muscles that keep knees and ankles safe. Girls' sports have more knee injuries than boys', and balance training is the single best way to cut that risk. It's protection you build in advance.",p:"When did you feel off balance today? What helped?"},
+ {t:"Landing",q:"Land like you're trying not to wake anyone.",l:"How you land matters more than how high you jump. Soft knees, hips back, quiet feet. Loud landings mean the force is going into your joints instead of your muscles. Every jump in the explosive circuit is a chance to practice this.",p:"Think about your last jump or sprint stop. Soft or loud?"},
+ {t:"Progressive",q:"A little more than last time.",l:"You get stronger by asking your body for slightly more than it did last week: one more rep, one more pound, one more round. Not a lot more. The coach's plan is built on this. Trust the slow climb.",p:"What did you do a little more of this week than last?"},
+ {t:"Rest days",q:"Rest is when you grow.",l:"Muscles get stronger on the days off, not on the days you lift. Skipping rest days to work harder actually makes you weaker and more likely to get hurt. A real rest day, with sleep and food, is part of the plan.",p:"When was your last real rest day? What did you do with it?"},
+ {t:"Tee work",q:"The tee is where swings get built.",l:"A pitched ball lets you hide a bad swing by just making contact. The tee doesn't. Every rep is the same pitch in the same place, so the only thing that changes is you. Boring is the point.",p:"What did your swing feel like on the tee today? What's one thing to fix tomorrow?"},
+ {t:"Top hand, bottom hand",q:"Two hands, two jobs.",l:"The bottom hand pulls the knob to the ball. The top hand drives through it. One-hand drills teach each hand its job so they stop fighting each other in a full swing. If one-hand swings feel weak, that's exactly the hand that needs the work.",p:"Which one-hand drill feels harder? What does that tell you?"},
+ {t:"Hard contact",q:"Hit it hard. Where it goes is the ball's problem.",l:"Young hitters try to aim. Great hitters try to hit it hard and let the field sort it out. Exit velocity is the number coaches look at first because hard contact turns outs into hits. Swing to drive the ball, not to place it.",p:"On the tee today, were you swinging to hit it hard or to hit it somewhere?"},
+ {t:"Two strikes",q:"Two strikes is a different at-bat.",l:"With two strikes the job changes: shorten up, see the ball deeper, put it in play. The hitters who refuse to adjust strike out. The ones who adjust turn strikeouts into ground balls that sometimes find holes. Know which at-bat you're in.",p:"How do you change your approach with two strikes? Do you actually do it?"},
+ {t:"Spots",q:"Call the spot before the pitch.",l:"Throwing hard is easy to measure. Throwing where you meant to is what wins. Every pitch in practice gets a called spot: say it out loud, then throw. If you can't say where it's going, it's a throw, not a pitch.",p:"In your last bullpen, what percentage of pitches went where you called them?"},
+ {t:"Change-up",q:"The change-up is a lie your arm tells.",l:"Same arm speed, same motion, slower ball. The pitch works because the hitter's eyes trust your arm. Slow the arm down to slow the ball and you've told the truth. Practice it with full effort or don't bother.",p:"When you throw your change-up, what does your arm speed feel like compared to your fastball?"},
+ {t:"Walks",q:"Walks are free runs you handed out.",l:"A pitcher who throws 60% strikes makes hitters earn everything. One who throws 50% gives it away. Strike percentage matters more than velocity until high school. Track it. It's the number you control most.",p:"What's your strike percentage lately? What would move it up 5 points?"},
+ {t:"Blocking",q:"Nothing gets by.",l:"A catcher's job isn't to catch the ball in the dirt. It's to put her body in front of it so the runner stays put. Chest over the ball, chin down, glove between the knees. Every blocked ball is a base you took back.",p:"When you block, where does your chin end up? Where should it be?"},
+ {t:"Quiet glove",q:"Stick it.",l:"Umpires call strikes they can see. A glove that jerks or drifts after the catch pulls strikes out of the zone. Catch it, hold it still for a beat, then come up. The pitcher throws the strike; the catcher keeps it.",p:"Did your glove move after the catch today? What did it feel like when it didn't?"},
+ {t:"Ground balls",q:"Field it in front. Feet first.",l:"Good infielders get their feet moving before the ball gets there, so they field it out in front with their body behind it. Reaching to the side is what happens when the feet were late. Fix the feet and the hands take care of themselves.",p:"On your last ground ball, were your feet moving or were you reaching?"},
+ {t:"Ready position",q:"Every pitch, every time.",l:"Fielders get beat because they weren't ready, not because they were slow. Ready position before every pitch, for seven innings, is a habit of attention. It's boring. It's also the difference between a hit and an out.",p:"How many pitches last game were you fully ready for? Be honest."},
+ {t:"First step",q:"The first step decides the play.",l:"Speed isn't about how fast you run. It's about how fast you start. Reading the ball off the bat and exploding in the right direction is worth more than any sixty time. The explosive circuit trains that first step.",p:"What's your first step like? Early, late, or sometimes guessing?"},
+ {t:"Running through",q:"Run through the bag.",l:"Slowing down at first base costs a tenth of a second, and a tenth is the difference between safe and out on a close play. Run through, break down after. Every single time, even when you know you're out. Habits don't have an off switch.",p:"Do you slow down before the bag? Why?"},
+ {t:"Backing up",q:"The best play nobody sees.",l:"Backing up a base when the ball isn't coming to you doesn't show up in a box score. College coaches watch for it anyway, because it tells them what kind of player you are when nobody's keeping track. Be in the right place.",p:"Where should you have been on a play last game that you weren't?"},
+ {t:"Pre-pitch routine",q:"Same thing before every pitch.",l:"Every great hitter and pitcher has a routine: a breath, a grip check, a look at the target. It isn't superstition. It gives your brain a known starting point so nerves have nowhere to land. Build one and use it every time.",p:"What's your routine before a pitch? If you don't have one, what would it be?"},
+ {t:"Nerves",q:"Nerves mean you care.",l:"Butterflies before a game are your body getting ready. The feeling is the same as excitement; only the label is different. Tell yourself you're excited, take a breath, and let the energy work for you instead of against you.",p:"When did you feel nervous recently? What did you tell yourself?"},
+ {t:"One pitch",q:"This pitch. Just this one.",l:"The at-bat before this one is over. The error last inning is over. The only thing you can affect is the next pitch. Players who stay in the current pitch play better than players who are still replaying the last one.",p:"When did your mind drift to a past play today? How did you get back?"},
+ {t:"Body language",q:"Your body talks before you do.",l:"Slumped shoulders after a strikeout tell the pitcher she owns you. Head up, walk back with purpose, and you've told her nothing. Body language is a skill, and it's one you can practice in a mirror.",p:"What does your body language look like after a mistake? What would you want it to look like?"},
+ {t:"Confidence",q:"Confidence is remembering the work.",l:"You don't need to feel confident before you can act confident. Confidence comes from evidence: the reps you logged, the bullpens you threw, the early mornings. When doubt shows up, don't argue with it. Show it the log.",p:"What's one piece of evidence from this week that you're getting better?"},
+ {t:"Inner coach",q:"Would you say that to a teammate?",l:"After a bad at-bat, the voice in your head gets loud. Listen to what it says. If you wouldn't say it to your best teammate, don't say it to yourself. Replace it with what you'd say to her: next one, you've got this, here's what to fix.",p:"What did your inner voice say after your last mistake? What should it have said?"},
+ {t:"Pressure",q:"Pressure is a privilege.",l:"You only feel pressure in moments that matter. Bases loaded, close game, your at-bat: that's the moment you trained for. Players who want the ball in those spots get them. Players who hide from them get fewer of them.",p:"Do you want the big moment or dread it? What would change that?"},
+ {t:"Comparison",q:"Her game is her game.",l:"There will always be a girl who throws harder or hits farther. Watching her tells you nothing about you. Learn from her if you can, then get back to your own line. The only number that tells you anything is yours versus yours.",p:"Who did you compare yourself to this week? What did it do to your energy?"},
+ {t:"Patience",q:"Big things are slow.",l:"Adding five miles an hour to a pitch takes a year, not a month. Most players quit the process because they don't see the change week to week. The ones who make it trust the trend, not the day. Your charts show the trend.",p:"What's something you're working on that's taking longer than you wanted?"},
+ {t:"Coachable",q:"Be easy to coach.",l:"Coaches give their best to players who take feedback without flinching. Eye contact, a nod, try it on the next rep. Not every correction will feel right. Try it anyway. The player who argues gets less coaching, and that's not a win.",p:"How did you react to correction today? Could you tell the coach wanted to give you more?"},
+ {t:"Asking",q:"The question is free.",l:"Players who ask 'what should I work on' get an answer every time, and it's usually gold. Most players never ask. Be the one who does. Coaches remember it, and you leave every practice with a plan.",p:"When's the last time you asked a coach what to work on? What did they say?"},
+ {t:"Teammate",q:"Pick her up.",l:"When a teammate makes an error, the next ten seconds matter. A glove tap, a 'next one', a look that says we're fine. It costs nothing and it's the thing teammates remember about you years later. College coaches ask about it.",p:"Who needed picking up today? Did you?"},
+ {t:"Energy",q:"Bring it. Especially when it's hard to.",l:"Energy in a dugout is contagious, both directions. One player who's loud and positive during a rough inning changes the whole bench. You don't have to feel it to give it. Give it anyway and watch the feeling follow.",p:"What was your dugout energy like today, 1 to 5? What drained or fueled it?"},
+ {t:"Leadership",q:"Leaders go first.",l:"Leadership isn't being the loudest. It's being first to the field, first to do the drill right, first to pick up the bucket. People follow what you do, not what you say. Lead with your feet.",p:"What did you do first today that others followed?"},
+ {t:"Respect",q:"Respect the umpire, the field, the other team.",l:"How you treat the ump when a call goes against you, how you leave the dugout, how you shake hands after a loss: coaches watch all of it. Class is a skill. It travels with you to every level.",p:"Was there a moment today where you could have shown more class? What would it have looked like?"},
+ {t:"Losing",q:"Losing is data.",l:"Nobody likes to lose. But a loss shows you exactly what to work on in a way a win never does. Give yourself the bus ride to be mad, then ask: what did that game teach me? Then get to work on it.",p:"What did your last loss teach you?"},
+ {t:"Winning",q:"Win the same way you lose.",l:"Be gracious when you win. Thank the other team, thank the umps, celebrate with your teammates, and then look for what to fix, because you played a great game with mistakes in it. Winning is a bad time to stop learning.",p:"After your last win, what's one thing you still needed to fix?"},
+ {t:"Sunday",q:"Sunday night decides the week.",l:"Five minutes on Sunday looking at the week: when are practices, when's the coach, when's the test, when does homework fit. When it's written down, Monday doesn't surprise you. Five minutes buys you a calm week.",p:"Did you look at the week ahead? What's the busiest day and how will you handle it?"},
+ {t:"Homework first",q:"Homework before practice, not after.",l:"After practice you're tired, it's late, and everything takes twice as long. Homework done in a study hall or right after school means you walk into practice with nothing hanging over you. Get it off the list early.",p:"When did homework happen today? Was that the best slot for it?"},
+ {t:"Bag packed",q:"Pack the bag the night before.",l:"Morning you is in a hurry and forgets things. Night-before you has time. Glove, cleats, water bottles, the shaker bottle, homework. Five minutes at night saves a frantic morning and a missing glove at practice.",p:"Is your bag packed for tomorrow?"},
+ {t:"The couch",q:"The couch is a trap.",l:"You walk in, drop the bag, sit down for 'a minute', and an hour disappears. Then it's a scramble to get everything done. Walk in, do the list, then sit down. The couch is more fun when it's earned.",p:"What happened in the first 20 minutes after you got home today?"},
+ {t:"Dead time",q:"Use the minutes nobody else uses.",l:"The bus. The ten minutes before practice. Study hall. Those add up to hours a week, and most people spend them scrolling. Use them for review, a homework problem, or just a look at tomorrow. Found time is free time.",p:"What dead time did you have today? What did you do with it?"},
+ {t:"Routines",q:"Decide once.",l:"Every decision costs a little energy. Getting ready for bed shouldn't take 45 minutes of deciding what's next. Same order every night: pack bag, clothes out, bottles filled, bathroom, read. When it's automatic, there's nothing to decide.",p:"How long did it take to get ready for bed last night? What slowed it down?"},
+ {t:"Phone",q:"The phone is a tool. Make it work for you.",l:"Phones are built to grab your attention and keep it. That's not your fault, but it is your problem. Reminders for the thing you forget, calendar for the big things, and then put it in another room when it's time to work.",p:"How much did your phone pull at you today? When did it help?"},
+ {t:"Grades",q:"The classroom is part of the resume.",l:"College coaches check grades before they check swings. A good student with a decent bat gets more offers than a great bat who can't stay eligible. Taking school seriously isn't separate from softball. It's part of it.",p:"What's one class you could put a little more into?"},
+ {t:"Variety",q:"Different sports, same athlete.",l:"The balance from gymnastics, the footwork from field hockey, the reads from basketball, the edge control from skiing: all of it comes back to the diamond. Specializing early means skipping all those lessons. Play everything while you can.",p:"What did you do in another sport this week that felt like it helped softball?"},
+ {t:"Rest from softball",q:"Time away makes you want it back.",l:"Taking a few weeks off softball each year keeps the arm healthy and keeps the sport fun. The players still playing at 20 are the ones who never burned out at 14. Loving it matters more than grinding it.",p:"Do you still love playing? What makes it fun?"},
+ {t:"Why",q:"Know why you're doing this.",l:"On the mornings you don't want to get up, 'because I have to' won't get you out of bed. 'Because I want to be a pitcher who owns the circle' will. Figure out your why and write it somewhere you'll see it.",p:"Why do you do this? Say it in one sentence."},
+ {t:"Small wins",q:"Count the small wins.",l:"Big goals are far away. Small wins are today: three bottles of water, a clean sweep, one more strike than last bullpen. Noticing the small wins is what keeps you going toward the big one. This app is a list of small wins.",p:"What's one small win from today?"},
+ {t:"Boredom",q:"Boring is where the gains are.",l:"Nobody films the ten thousandth tee swing. There's no highlight for the bands you did before school. The boring reps are where the difference gets built, exactly because most players won't do them. Embrace boring.",p:"What boring thing did you do today that most people would have skipped?"},
+ {t:"Gratitude",q:"Somebody got you here.",l:"A parent drove. A coach stayed late. A teammate threw with you. Nobody does this alone. Noticing who helped, and saying thanks, isn't just polite. Grateful athletes handle hard days better. The research actually says so.",p:"Who helped you this week? Did you thank them?"},
+ {t:"Tomorrow",q:"Make tomorrow easy.",l:"The best thing you can do for tomorrow is tonight: bag packed, bottles filled, phone away, in bed on time. Tomorrow's good day is mostly built the night before. Then you just have to show up.",p:"What's one thing you can do tonight to make tomorrow better?"}
+];
+const FACTORS=["Slept well","Ate breakfast","Good practice","Hung out with friends","Got outside","Big game or test","Lots of homework","Late night","Lots of screen time","Felt sick","Skipped a meal","Argument or drama"];
+const TIERS=["Bronze","Silver","Gold","Platinum","Diamond"];
+/* count = her own volume; tiers = thresholds for Bronze..Diamond. Nothing resets. */
+const BADGES=[
+ {id:"sweeps",name:"Clean sweeps",unit:"sweep days",count:()=>count(cleanSweep),tiers:[1,5,15,40,100]},
+ {id:"showup",name:"Showed up",unit:"days in a row (best)",count:()=>maxRun(k=>basePoints(k)>0),tiers:[7,14,30,60,100]},
+ {id:"planner",name:"Planner",unit:"Sunday plans",count:()=>count(k=>day(k).plan),tiers:[4,8,16,26,40]},
+ {id:"iron",name:"Iron",unit:"coach sessions",count:()=>count(k=>day(k).coach),tiers:[8,16,32,48,80]},
+ {id:"selfmade",name:"Self-made",unit:"workouts nobody scheduled",count:()=>count(k=>day(k).mobility),tiers:[10,25,50,100,200]},
+ {id:"grinder",name:"Grinder",unit:"skill routines",count:()=>allKeys().reduce((n,k)=>n+routines(k).length,0),tiers:[10,25,50,100,200]},
+ {id:"wellfed",name:"Well fed",unit:"protein + fruit + veggie days",count:()=>count(k=>day(k).protein&&day(k).fruit&&day(k).veg),tiers:[20,40,80,150,250]},
+ {id:"hydrated",name:"Hydrated",unit:"3-bottle days",count:()=>count(k=>Number(day(k).water)>=3),tiers:[20,40,80,150,250]},
+ {id:"rested",name:"Rested",unit:"nights of 9+",count:()=>count(k=>Number(day(k).hours)>=9),tiers:[10,25,50,100,200]},
+ {id:"multisport",name:"Multi-sport",unit:"different sports practiced",count:()=>new Set(allKeys().map(k=>day(k).practice).filter(Boolean)).size,tiers:[2,3,4,5,6]},
+ {id:"thinker",name:"Thinker",unit:"reflections",count:()=>count(k=>day(k).reflect),tiers:[30,60,120,200,365]},
+ {id:"newbest",name:"New best",unit:"personal records",count:()=>{let n=0;METRICS.forEach(g=>g.items.forEach(m=>{const r=(S.metrics[m.id]||[]).slice().sort((a,b)=>a.d<b.d?-1:1);let best=null;r.forEach((e,i)=>{if(i===0){best=e.v;return}if(m.lower?e.v<best:e.v>best){n++;best=e.v}})}));return n},tiers:[5,12,25,50,100]},
+ {id:"bigmonth",name:"Big month",unit:"months of 500+",count:()=>{const m={};allKeys().forEach(k=>{m[monthKey(k)]=(m[monthKey(k)]||0)+dayTotal(k)});return Object.values(m).filter(v=>v>=500).length},tiers:[1,3,6,9,12]}
+];
+function monthList(){ const m={}; allKeys().forEach(k=>{m[monthKey(k)]=(m[monthKey(k)]||0)+dayTotal(k)}); Object.keys(S.months||{}).forEach(mk=>{if(!(mk in m))m[mk]=0}); return Object.keys(m).sort().map(mk=>({mk,total:m[mk],goal:(S.months[mk]||{}).goal||0,reward:(S.months[mk]||{}).reward||""})) }
+function monthName(mk){ const [y,m]=mk.split("-").map(Number); return new Date(y,m-1,1).toLocaleDateString(undefined,{month:"long",year:"numeric"}) }
+function badgeState(b){ const n=b.count(); let lvl=0; b.tiers.forEach(t=>{if(n>=t)lvl++}); return {n,lvl,tier:lvl?TIERS[lvl-1]:null,next:lvl<5?b.tiers[lvl]:null} }
+const SPORTS=["Softball","Field hockey","Gymnastics","Basketball","Ski","Golf","Soccer","Volleyball","Other"];
+const BANDS={ /* [avg, good, elite] by age group; lower-is-better metrics use [ok, good, elite] */
+ exit:{"10U":[45,50,54],"12U":[52,57,60],"14U":[57,62,66],"HS":[62,67,72],"COL":[67,70,75]},
+ bat:{"10U":[40,45,49],"12U":[46,51,55],"14U":[51,56,60],"HS":[56,61,66],"COL":[63,66,70]},
+ throw:{"10U":[40,44,48],"12U":[46,50,53],"14U":[52,56,60],"HS":[56,60,64],"COL":[60,63,66]},
+ pitch:{"10U":[38,42,46],"12U":[44,49,52],"14U":[50,54,57],"HS":[55,59,63],"COL":[60,63,66]},
+ pop:{"10U":[3.3,3.0,2.8],"12U":[2.9,2.7,2.5],"14U":[2.6,2.4,2.2],"HS":[2.3,2.1,2.0],"COL":[2.0,1.9,1.8]},
+ h2f:{"10U":[3.9,3.7,3.5],"12U":[3.6,3.4,3.3],"14U":[3.4,3.25,3.1],"HS":[3.2,3.1,3.0],"COL":[3.0,2.9,2.8]},
+ broad:{"10U":[50,58,64],"12U":[58,66,72],"14U":[64,72,80],"HS":[70,78,86],"COL":[84,90,96]},
+ shuttle:{"10U":[6.0,5.7,5.4],"12U":[5.6,5.3,5.1],"14U":[5.3,5.0,4.8],"HS":[5.1,4.8,4.6],"COL":[4.7,4.55,4.4]}
+};
+/* Reference table, 12U through college. Ranges are typical-to-good; the top of each range is where a player stands out at that level. */
+const BENCH=[
+ ["Exit velocity (mph)","44–50","50–57","57–63","60–67","67–75"],
+ ["Bat speed (mph)","40–46","46–53","51–58","56–63","63–70"],
+ ["Throwing velocity (mph)","40–46","46–52","52–58","56–62","60–66"],
+ ["Pitching velocity (mph)","38–44","44–50","50–56","55–60","60–66"],
+ ["Strike %","45–50","50–55","55–60","60–65","65+"],
+ ["Pop time (sec)","3.3–2.9","2.9–2.6","2.6–2.3","2.3–2.0","2.0–1.8"],
+ ["Home to first (sec)","3.9–3.6","3.6–3.3","3.4–3.1","3.2–3.0","3.0–2.8"],
+ ["Broad jump (in)","50–60","58–70","64–78","70–86","84–96"],
+ ["5-10-5 shuttle (sec)","6.0–5.6","5.6–5.2","5.3–4.9","5.1–4.7","4.7–4.4"]
+];
+const METRICS=[
+ {g:"Hitting",items:[
+  {id:"exit",name:"Exit velocity",unit:"mph",band:"exit",step:1,how:"off a tee, best of 5"},
+  {id:"bat",name:"Bat speed",unit:"mph",band:"bat",step:1,how:"Blast or similar sensor, average of 10"}
+ ]},
+ {g:"Throwing",items:[
+  {id:"throw",name:"Throwing velocity",unit:"mph",band:"throw",step:1,how:"crow hop, best of 3"}
+ ]},
+ {g:"Pitching",pitcher:true,items:[
+  {id:"pitch",name:"Pitching velocity",unit:"mph",band:"pitch",step:1,how:"fastball, best of 5"},
+  {id:"strike",name:"Fastball strike %",unit:"%",step:1,how:"from GameChanger after each game, or the 30-pitch bonus"},
+  {id:"custrike",name:"Change-up strike %",unit:"%",step:1,how:"from the 30-pitch bonus, change-up round"}
+ ]},
+ {g:"Catching",catcher:true,items:[
+  {id:"pop",name:"Pop time",unit:"sec",band:"pop",step:0.01,lower:true,how:"glove pop to glove at second, best of 3"}
+ ]},
+ {g:"Strength, agility and speed",items:[
+  {id:"h2f",name:"Home to first",unit:"sec",band:"h2f",step:0.01,lower:true,how:"clock starts at bat contact (dry swing is fine), stops at the bag"},
+  {id:"broad",name:"Broad jump",unit:"in",band:"broad",step:1,how:"two feet, stick the landing, best of 3"},
+  {id:"shuttle",name:"5-10-5 shuttle",unit:"sec",band:"shuttle",step:0.01,lower:true,how:"start in a 3-point stance, best of 2"},
+  {id:"pushups",name:"Hand-release push-ups",unit:"in 1 min",step:1,how:"chest to floor, hands off, full lockout. No band, just beat your own number"}
+ ]}
+];
+/* ---------- habit definitions ---------- */
+/* kind: check (fixed pts) | tier (options) | count (pts per unit, max) | hours (sleep) */
+const BUCKETS=[
+ {id:"strength",name:"Strength",items:[
+   {id:"coach",name:"Strength session with coach",sub:"2 per week",pts:5,kind:"check",when:true},
+   {id:"mobility",name:"Your own workout",sub:"mobility, bands, Peloton, workbook day two · ideas under Workouts on the 15 Min tab",kind:"tier",opts:[["15 min",3],["20 min",4],["30 min",5]],when:true}
+ ]},
+ {id:"skill",name:"Skill",items:[
+   {id:"routines",name:"15-minute skill routines",sub:"log them on the 15 Min tab · 3 to 5 points, +1 for doing two in a day",kind:"multi",daily:true},
+   {id:"practice",name:"Practice, any sport",sub:"indoor or outdoor",pts:3,kind:"sport",when:true},
+   {id:"changeup",name:"Change-up round",pts:1,kind:"check",pitcher:true,when:true,hidden:true}
+ ]},
+ {id:"fuel",name:"Fuel & water",items:[
+   {id:"protein",name:"Protein with breakfast",sub:"the smoothie, eggs, Greek yogurt, turkey, cottage cheese",pts:1,kind:"check",daily:true},
+   {id:"fruit",name:"Fruit today",sub:"banana, apple, berries, orange, grapes",pts:1,kind:"check",daily:true},
+   {id:"veg",name:"Veggie or salad today",sub:"salad, carrots, peppers, broccoli, cucumbers",pts:1,kind:"check",daily:true},
+   {id:"snack",name:"Recovery food after training",sub:"within an hour: shake in the shaker bottle, chocolate milk, yogurt + fruit, PB sandwich",pts:1,kind:"check",when:true},
+   {id:"water",name:"Water bottles finished",sub:"1 point each, up to 3",kind:"count",per:1,max:3,daily:true}
+ ]},
+ {id:"sleep",name:"Sleep & recovery",items:[
+   {id:"hours",name:"Hours slept last night",sub:"8+ = 2 pts, 9+ = 3 pts",kind:"hours",daily:true},
+   {id:"screens",name:"Screens off, read 30 min before bed",pts:1,kind:"check",daily:true},
+   {id:"stretch",name:"Stretch or foam roll",pts:1,kind:"check",daily:true}
+ ]},
+ {id:"mind",name:"Mind",items:[
+   {id:"reflect",name:"Reflection written",sub:"on the Reflect tab",pts:2,kind:"auto",daily:true},
+   {id:"plan",name:"Sunday plan for the week",sub:"5 minutes looking at the week",pts:3,kind:"check",sunday:true}
+ ]}
+];
+
+/* ---------- storage ---------- */
+function load(){ try{ const r=localStorage.getItem(LS_KEY); return r?JSON.parse(r):null }catch(e){ return null } }
+function save(){ try{ localStorage.setItem(LS_KEY,JSON.stringify(S)) }catch(e){} }
+let S=load()||{profile:null,days:{},metrics:{},badges:[]};
+if(!S.days)S.days={}; if(!S.metrics)S.metrics={}; if(!S.badges)S.badges=[]; if(!S.months)S.months={};
+
+/* ---------- dates ---------- */
+function key(d){ return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0") }
+function parse(k){ const [y,m,d]=k.split("-").map(Number); return new Date(y,m-1,d) }
+function addDays(k,n){ const d=parse(k); d.setDate(d.getDate()+n); return key(d) }
+function today(){ return key(new Date()) }
+function dayOfYear(k){ const d=parse(k); return Math.floor((d-new Date(d.getFullYear(),0,0))/864e5) }
+function weekStart(k){ const d=parse(k); const dow=(d.getDay()+6)%7; d.setDate(d.getDate()-dow); return key(d) } /* Monday */
+function monthKey(k){ return k.slice(0,7) }
+function fmt(k){ return parse(k).toLocaleDateString(undefined,{weekday:"short",month:"short",day:"numeric"}) }
+
+/* ---------- scoring (pure) ---------- */
+function day(k){ return S.days[k]||{} }
+function itemPoints(it,v){
+  if(v==null||v===false||v===0||v==="")return 0;
+  switch(it.kind){
+    case "check": case "auto": return it.pts;
+    case "sport": return v?it.pts:0;
+    case "tier": { const o=it.opts.find(o=>o[0]===v); return o?o[1]:0 }
+    case "multi": { const arr=Array.isArray(v)?v:[]; if(!arr.length)return 0; const T={"15 min":3,"20 min":4,"30 min":5}; return Math.max(...arr.map(r=>T[r.t]||3))+(arr.length>=2?1:0) }
+    case "count": return Math.min(it.max,Number(v)||0)*it.per;
+    case "hours": { const h=Number(v)||0; return h>=9?3:h>=8?2:0 }
+  }
+  return 0;
+}
+function activeItems(k){
+  const dow=parse(k).getDay();
+  const out=[];
+  BUCKETS.forEach(b=>b.items.forEach(it=>{
+    if(it.pitcher&&!(S.profile&&S.profile.pitcher))return;
+    if(it.sunday&&dow!==0)return;
+    out.push(Object.assign({bucket:b.id},it));
+  }));
+  return out;
+}
+function val(k,it){ return it.kind==="multi"?routines(k):day(k)[it.id] }
+function basePoints(k){ return activeItems(k).reduce((s,it)=>s+itemPoints(it,val(k,it)),0) }
+function bucketHit(k,bid){ return activeItems(k).some(it=>it.bucket===bid&&itemPoints(it,val(k,it))>0) }
+function cleanSweep(k){ const req=activeItems(k).filter(it=>it.daily); return req.length>0&&req.every(it=>itemPoints(it,val(k,it))>0) }
+function runLength(k,fn){ let n=0,c=k; while(fn(c)){n++;c=addDays(c,-1); if(n>400)break} return n }
+function bonuses(k){
+  const list=[];
+  if(cleanSweep(k))list.push(["Clean sweep: every daily box checked",5]);
+  BUCKETS.forEach(b=>{ const r=runLength(k,c=>bucketHit(c,b.id)); if(r>0&&r%7===0)list.push([b.name+" streak: 7 days in a row",5]) });
+  const hr=runLength(k,c=>(Number(day(c).hours)||0)>=8); if(hr>0&&hr%5===0)list.push(["Sleep streak: 5 nights of 8+",5]);
+  const ws=weekStart(k); let coachDays=0,lastCoach=null;
+  for(let i=0;i<7;i++){ const c=addDays(ws,i); if(day(c).coach){coachDays++;lastCoach=c} }
+  if(coachDays>=2&&lastCoach===k)list.push(["Strength week: both coach sessions",5]);
+  return list;
+}
+function dayTotal(k){ return basePoints(k)+bonuses(k).reduce((s,b)=>s+b[1],0) }
+function allKeys(){ return Object.keys(S.days).sort() }
+function sumWhere(fn){ return allKeys().filter(fn).reduce((s,k)=>s+dayTotal(k),0) }
+function weekTotal(k){ const ws=weekStart(k); const we=addDays(ws,6); return sumWhere(c=>c>=ws&&c<=we) }
+function monthTotal(k){ const m=monthKey(k); return sumWhere(c=>monthKey(c)===m) }
+function allTime(){ return sumWhere(()=>true) }
+function bestDay(){ return allKeys().reduce((m,k)=>Math.max(m,dayTotal(k)),0) }
+function bestMonth(){ return Math.max(0,...monthList().map(m=>m.total)) }
+function bestWeek(){ const seen={}; allKeys().forEach(k=>{seen[weekStart(k)]=1}); return Object.keys(seen).reduce((m,ws)=>Math.max(m,weekTotal(ws)),0) }
+function count(fn){ return allKeys().filter(fn).length }
+function maxRun(fn){ let best=0,run=0,prev=null; allKeys().forEach(k=>{ if(fn(k)){ run=(prev&&addDays(prev,1)===k)?run+1:1; best=Math.max(best,run) } else run=0; prev=k }); return best }
+/* Lessons advance only when a reflection is saved: a missed day shows the same lesson again tomorrow. */
+function lessonIdx(k){ const d=day(k); if(d.lessonIdx!=null)return d.lessonIdx; const n=allKeys().filter(c=>c<k&&day(c).reflect).length; return n%LESSONS.length }
+function lesson(k){ return LESSONS[lessonIdx(k)] }
+function patterns(){
+  const ks=allKeys().filter(k=>day(k).energy&&Array.isArray(day(k).factors));
+  if(ks.length<7)return null;
+  const out=[];
+  FACTORS.forEach(f=>{
+    const w=ks.filter(k=>day(k).factors.includes(f)), wo=ks.filter(k=>!day(k).factors.includes(f));
+    if(w.length<3||wo.length<3)return;
+    const avg=a=>a.reduce((s,k)=>s+Number(day(k).energy),0)/a.length;
+    out.push({f,diff:avg(w)-avg(wo),n:w.length});
+  });
+  out.sort((a,b)=>b.diff-a.diff);
+  return {n:ks.length,up:out.filter(o=>o.diff>=0.4).slice(0,3),down:out.filter(o=>o.diff<=-0.4).slice(-3).reverse()};
+}
+
+/* ---------- ui helpers ---------- */
+let tab="today", viewDay=today();
+const app=document.getElementById("app"), toastEl=document.getElementById("toast");
+let toastT; function toast(m){ toastEl.textContent=m; toastEl.classList.add("show"); clearTimeout(toastT); toastT=setTimeout(()=>toastEl.classList.remove("show"),1600) }
+function esc(s){ return String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c])) }
+function set(k,id,v){ if(!S.days[k])S.days[k]={}; S.days[k][id]=v; save() }
+
+/* ---------- tabs ---------- */
+const ICONS={
+ today:'<svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>',
+ fifteen:'<svg viewBox="0 0 24 24"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l3 2M9 3h6"/></svg>',
+ reflect:'<svg viewBox="0 0 24 24"><path d="M4 20l4-1 11-11-3-3L5 16z"/><path d="M13 8l3 3"/></svg>',
+ numbers:'<svg viewBox="0 0 24 24"><path d="M4 19V5M4 19h16"/><path d="M7 15l4-5 3 3 5-7"/></svg>',
+ recap:'<svg viewBox="0 0 24 24"><path d="M5 4h14v16H5z"/><path d="M8 9h8M8 13h8M8 17h5"/></svg>'
+};
+const TABS=[["today","Today"],["fifteen","15 Min"],["reflect","Reflect"],["numbers","Numbers"],["recap","Recap"]];
+function renderTabs(){
+  document.getElementById("tabbar").innerHTML=TABS.map(t=>`<button role="tab" aria-selected="${tab===t[0]}" data-tab="${t[0]}">${ICONS[t[0]]}<span>${t[1]}</span></button>`).join("");
+}
+document.getElementById("tabbar").addEventListener("click",e=>{ const b=e.target.closest("button[data-tab]"); if(!b)return; tab=b.dataset.tab; render(); window.scrollTo(0,0) });
+
+/* ---------- views ---------- */
+function render(){
+  renderTabs();
+  if(!S.profile){ app.innerHTML=viewSetup(); return }
+  app.innerHTML={start:viewStart,today:viewToday,reflect:viewReflect,fifteen:viewFifteen,numbers:viewNumbers,recap:viewRecap}[tab]();
+}
+
+function viewSetup(){
+  return `<div class="setup">
+  <div class="eyebrow">Welcome</div>
+  <h1>Run It Up</h1>
+  <p class="lede">Your daily habits, your score, your numbers. Nobody's checking it but you.</p>
+  <form id="setup">
+   <div class="field"><label class="f" for="s-name">Your first name</label><input id="s-name" required autocomplete="off"></div>
+   <div class="field"><label class="f" for="s-age">Age group</label><select id="s-age"><option value="10U">10U</option><option value="12U">12U</option><option value="14U">14U</option><option value="HS">High school</option></select></div>
+   <div class="field"><label class="f">Do you pitch?</label><div class="seg" id="s-pitch"><button type="button" aria-pressed="false" data-v="1">Yes</button><button type="button" aria-pressed="true" data-v="0">No</button></div></div>
+   <div class="field"><label class="f">Do you catch?</label><div class="seg" id="s-catch"><button type="button" aria-pressed="false" data-v="1">Yes</button><button type="button" aria-pressed="true" data-v="0">No</button></div></div>
+   <button class="btn" type="submit">Let's go</button>
+  </form></div>`;
+}
+
+function viewStart(){
+  const sec=(h,body,you)=>`<h2>${h}</h2><p>${body}</p><div class="you"><b>For you:</b> ${you}</div>`;
+  return `<div class="intro">
+  <div class="topbar"><div class="eyebrow">What it takes</div><button type="button" class="link quiet" data-tab-go="today">← Today</button></div>
+  <h1>The small things</h1>
+  <p class="lede">Nobody gets good in one big moment. The athletes who reach the next level win because of a bunch of small things they do every day that most people skip. None of them are hard. The hard part is doing them when nobody's watching. This app makes the small things visible so you can watch yourself stack them up.</p>
+  ${sec("Daily habits beat talent","Talent gets you noticed. Habits get you there. A fifteen-minute routine done every day for a year is over 90 hours of work your competition didn't do. Pick a few things you'll do every day, make them small enough that you can't talk yourself out of them, and protect them.","fifteen minutes of tee work, wall ball, pitching reps, or a Peloton stretch. Before school if you can, so it's done before the day gets busy. More is a bonus, not the expectation.")}
+  ${sec("Play more than one sport","The research is clear: kids who play multiple sports through about age 14 get hurt less and are <em>more</em> likely to reach the elite level than kids who specialize early. Field hockey, gymnastics, basketball, skiing all make you a better softball player: balance, footwork, body control, and a brain that's learned a lot of different movements.","keep playing everything. Any practice in any sport counts here.")}
+  ${sec("Strength is the foundation","Exit velocity, throwing velocity, pitch speed, and sprint times all come from the same place: a strong, explosive body. You can't swing hard with a weak core and you can't throw hard with weak legs. Strength training at your age is about learning to move well and building the base everything else sits on. This is the biggest thing separating varsity and college players from everyone else.","show up to both coach sessions every week. Do mobility or band work on off days, on your own.")}
+  ${sec("Fuel and water","You can't train hard on a bagel and orange juice. Every meal needs protein, something from a plant, and real food instead of snacks. After training your muscles are open for business for about an hour. Feed them then and they rebuild stronger. Even mild dehydration slows reaction time and decision-making.","protein at breakfast, a fruit and a veggie every day, recovery food after practice, finish your water bottles.")}
+  <div class="food">
+   <div><span class="eyebrow">Protein at breakfast</span>The smoothie (fruit, coconut water for electrolytes, protein, oats, flax, chia: that's a complete breakfast in a cup) · Eggs any way · Greek yogurt · Cottage cheese · Turkey or ham · Peanut butter on toast</div>
+   <div><span class="eyebrow">Recovery food, within an hour of training</span>Protein shake in the shaker bottle · Chocolate milk · Greek yogurt with fruit · PB and banana sandwich · Turkey wrap · Trail mix and a piece of fruit · Cheese stick and crackers</div>
+   <div><span class="eyebrow">Before a game or practice, 1 to 2 hours out</span>Something light with carbs: banana · granola bar · toast with PB · pretzels · a small sandwich. Skip anything heavy or greasy.</div>
+   <div><span class="eyebrow">Easy fruit and veg</span>Banana, apple, berries, grapes, oranges · Baby carrots, cucumber slices, peppers, cherry tomatoes, a side salad, broccoli with dinner</div>
+  </div>
+  ${sec("Sleep is when you actually get better","Practice is where you stress the body. Sleep is where it adapts. Athletes your age need 8 to 10 hours. Teen athletes who sleep under 8 hours get hurt about twice as often. The best college athletes treat bedtime like a practice.","screens off 30 minutes before bed, same bedtime most nights, aim for 9 hours.")}
+  ${sec("Manage your time, or it manages you","College athletes juggle practice, lifting, class, travel, and homework. The ones who thrive aren't smarter. They plan. When you decide ahead of time when things happen, you stop having to decide every day, and deciding is what wears people out. The other trap is the couch: you get home, crash for a bit, and suddenly you're scrambling to get everything done before reading time. Lists first, then relax if there's time. If there isn't, sleep wins.","a 5-minute look at the week on Sunday. Homework before practice, not after.")}
+  <div class="food">
+   <div><span class="eyebrow">Use the dead time</span>Bus rides, study halls, breaks between classes. Knock out homework or review for tomorrow's test or tomorrow's lesson. Ten minutes of review the day before makes the material way easier when the teacher gets to it.</div>
+   <div><span class="eyebrow">Big things on the calendar, small things on a list</span>Google Calendar is for the big rocks: practices, coach sessions, games, tests, anything with a time. Everything else goes on a daily list: homework, chores, the 15 minutes, pack the bag. Make the list in the morning or the night before, then work it top to bottom. Set a reminder on your phone for the one thing you always forget. If it's written down it gets done. If it's in your head it gets forgotten.</div>
+   <div><span class="eyebrow">Lists first, then relax</span>Walk in the door and do the list before the couch. Relax once the list is done, if there's time. If there isn't, sleep comes before relaxing. Every time.</div>
+   <div><span class="eyebrow">Routines for the little things</span>Getting ready for bed or for school should take 10 minutes, not 45. Same order every time: bag packed the night before, clothes out, water bottles filled, then the bathroom routine. When the little things run on autopilot, you have energy left for the things that matter.</div>
+  </div>
+  ${sec("Your mind is a muscle too","Every athlete fails constantly. A .350 hitter fails 65% of the time. What separates people is how fast they reset. Sports psychologists teach the same few skills to pros and kids: breathe before the pitch, focus on what you control, talk to yourself like you'd talk to a teammate, and treat mistakes as information instead of verdicts. These are learnable. You practice them the same way you practice a swing.","one line of reflection a day. It takes a minute and it's how you build the reset.")}
+  <h2>Own it</h2>
+  <p>The athletes who make it are the ones who wanted it themselves. Not for a coach, not for a parent. This app is yours. The score is yours. Nobody's checking it but you. Run it up.</p>
+  <h2>How the score works</h2>
+  <p>Every box is worth points. A solid day is 20 to 25. A perfect day is in the 30s. Nothing is ever negative: a bad day just doesn't add. The score really runs up through bonuses:</p>
+  <ul>
+   <li>Clean sweep, every daily box checked: <b>+5</b></li>
+   <li>7 days in a row in any bucket: <b>+5</b> per bucket</li>
+   <li>Both coach sessions in a week: <b>+5</b></li>
+   <li>5 nights in a row of 8+ hours: <b>+5</b></li>
+  </ul>
+  <p>Badges aren't prizes. Each one counts something you've done: Sunday plans, workouts nobody scheduled, nights of real sleep. Do enough and it goes Bronze, then Silver, Gold, Platinum, Diamond. Nothing ever resets. The counts only go up.</p>
+  </div>`;
+}
+
+function viewToday(){
+  const k=viewDay, d=day(k), isToday=k===today();
+  const L=lesson(k);
+  const bon=bonuses(k);
+  const items=activeItems(k);
+  const bucketsHtml=BUCKETS.map(b=>{
+    const its=items.filter(it=>it.bucket===b.id); if(!its.length)return "";
+    const streak=runLength(k,c=>bucketHit(c,b.id));
+    return `<section class="bucket"><div class="bucket-head"><h3>${b.name}</h3><span class="streak">${streak>0?streak+"-day streak":""}</span></div>
+     ${its.map(it=>renderItem(it,d[it.id])).join("")}</section>`;
+  }).join("");
+  return `<div class="topbar"><div class="eyebrow">${S.profile.name} · ${S.profile.age}</div><button type="button" class="link" data-tab-go="start"><svg viewBox="0 0 24 24"><path d="M4 5a2 2 0 012-2h6v16H6a2 2 0 00-2 2z"/><path d="M12 3h6a2 2 0 012 2v16a2 2 0 00-2-2h-6"/></svg>What it takes</button></div>
+  <div class="daynav"><button data-nav="-1" aria-label="Previous day">‹</button><span class="d">${isToday?"Today, ":""}${fmt(k)}</span><button data-nav="1" ${isToday?"disabled":""} aria-label="Next day">›</button></div>
+  <div class="score">
+   <div><div class="big">${dayTotal(k)}</div><div class="l">${isToday?"today":"that day"}</div></div>
+   <div><div class="n">${weekTotal(k)}</div><div class="l">this week</div></div>
+   <div><div class="n">${monthTotal(k)}</div><div class="l">this month</div></div>
+   <div><div class="n">${bestDay()}</div><div class="l">best day</div></div>
+   <div><div class="n">${bestWeek()}</div><div class="l">best week</div></div>
+   <div><div class="n">${bestMonth()}</div><div class="l">best month</div></div>
+   <div class="all"><div class="n">${allTime()}</div><div class="l">total points, all time</div></div>
+  </div>
+  ${backupBanner()}
+  ${monthBox(k)}
+  <div class="theme"><span class="eyebrow">Lesson ${lessonIdx(k)+1}: ${L.t}</span><br><b>${L.q}</b><br><button type="button" class="link" data-tab-go="reflect">Read today's lesson →</button></div>
+  ${bucketsHtml}
+  <div class="bonus"><h3>Bonuses</h3>
+   <ul>${["Clean sweep","Strength streak","Skill streak","Fuel & water streak","Sleep & recovery streak","Mind streak","Sleep streak","Strength week"].map(n=>{const hit=bon.find(b=>b[0].startsWith(n));return `<li class="${hit?"hit":""}">${hit?hit[0]+" +"+hit[1]:n}</li>`}).join("")}</ul>
+  </div>
+  <div class="bonus"><h3>Badges</h3>
+   <p class="muted" style="font-size:.85rem;margin:4px 0 8px">Bronze, Silver, Gold, Platinum, Diamond. They count what you've done and never reset. They're about who you're becoming, not prizes.</p>
+   <div class="blist">${BADGES.map(b=>{const st=badgeState(b);return `<div class="brow ${st.tier?"t-"+st.tier.toLowerCase():""}"><span class="bname">${b.name}</span><span class="btier">${st.tier||"—"}</span><span class="bprog">${st.n}${st.next?` / ${st.next}`:" · maxed"}</span><span class="bunit">${b.unit}</span></div>`}).join("")}</div>
+  </div>
+  <details class="settings"><summary>Settings and backup</summary>
+   <div style="margin-top:10px">
+    <div class="field"><label class="f" for="p-age">Age group</label><select id="p-age"><option ${S.profile.age==="10U"?"selected":""}>10U</option><option ${S.profile.age==="12U"?"selected":""}>12U</option><option ${S.profile.age==="14U"?"selected":""}>14U</option><option value="HS" ${S.profile.age==="HS"?"selected":""}>High school</option></select></div>
+    <div class="field"><label class="f">Pitcher</label><div class="seg" id="p-pitch"><button type="button" aria-pressed="${S.profile.pitcher}" data-v="1">Yes</button><button type="button" aria-pressed="${!S.profile.pitcher}" data-v="0">No</button></div></div>
+    <div class="field"><label class="f">Catcher</label><div class="seg" id="p-catch"><button type="button" aria-pressed="${!!S.profile.catcher}" data-v="1">Yes</button><button type="button" aria-pressed="${!S.profile.catcher}" data-v="0">No</button></div></div>
+    <p class="muted" style="font-size:.85rem">Your data lives on this phone only. Back it up once a month:</p>
+    <ol class="muted" style="font-size:.85rem;padding-left:18px;margin:0 0 10px">
+     <li>Tap <b>Copy backup</b> below.</li>
+     <li>Open the <b>Notes</b> app. The first time, make a new note called <b>Run It Up backup</b>. After that, open that same note.</li>
+     <li>Tap at the top of the note, type today's date, then press and hold and tap <b>Paste</b>. Newest backup always on top.</li>
+    </ol>
+    <p class="muted" style="font-size:.85rem">To put your data back on a new phone: install the app, open Settings here, tap <b>Restore from backup</b>, copy the newest block from your note and paste it in.</p>
+    <div class="row"><button class="btn ghost" id="bk-copy" type="button">Copy backup</button><button class="btn ghost" id="bk-show" type="button">Restore from backup</button></div>
+    <div id="bk-area" hidden style="margin-top:10px"><textarea id="bk-text" placeholder="Paste your backup here"></textarea><button class="btn" id="bk-restore" type="button" style="margin-top:8px">Restore</button></div>
+   </div></details>`;
+}
+function backupBanner(){
+  const t=parse(today()), dim=new Date(t.getFullYear(),t.getMonth()+1,0).getDate(), dn=t.getDate();
+  const show=dn>=dim-1||dn===1; if(!show)return "";
+  const stamp=monthKey(today())+(dn===1?"-a":"-b"); if(S.bannerDone===stamp)return "";
+  return `<div class="banner"><div><b>Month's ${dn===1?"just started":"almost over"}.</b> Tap Copy backup, then open Notes and paste it at the top of your "Run It Up backup" note with today's date. Takes 10 seconds and protects your streaks.</div><div class="row"><button type="button" class="btn small" id="bn-copy">Copy backup</button><button type="button" class="btn ghost small" id="bn-done" data-stamp="${stamp}">Done</button></div></div>`;
+}
+function monthBox(k){
+  const mk=monthKey(k), mo=S.months[mk]||{}, total=monthTotal(k), goal=Number(mo.goal)||0;
+  const pct=goal?Math.min(100,Math.round(100*total/goal)):0;
+  const hist=monthList().filter(m=>m.mk!==mk).reverse();
+  const best=Math.max(0,...monthList().map(m=>m.total));
+  const daysIn=new Date(parse(k).getFullYear(),parse(k).getMonth()+1,0).getDate(), dayN=parse(k).getDate();
+  const pace=dayN>0?Math.round(total/dayN*daysIn):0;
+  return `<div class="month">
+   <div class="mhead"><span class="eyebrow">${monthName(mk)}</span><span class="muted" style="font-size:.8rem">on pace for ~${pace}${best&&total<best?` · best month ${best}`:total>=best&&total>0?" · best month so far":""}</span></div>
+   ${goal?`<div class="mbar"><div style="width:${pct}%"></div></div><div class="mline"><b>${total}</b> of ${goal}${total>=goal?` · <span class="hit">Goal hit${mo.reward?": "+esc(mo.reward):""}</span>`:mo.reward?` · <span class="muted">${esc(mo.reward)}</span>`:""}</div>`:`<div class="mline muted">No goal set for this month yet.</div>`}
+   <details class="mset"><summary>${goal?"Change goal or reward":"Set a goal for this month"}</summary>
+    <div class="mform">
+     <div><label class="f" for="m-goal">Points goal</label><input id="m-goal" type="number" inputmode="numeric" min="0" step="50" value="${goal||""}" placeholder="e.g. 500"></div>
+     <div><label class="f" for="m-reward">What you'll do when you hit it (your pick)</label><input id="m-reward" type="text" value="${esc(mo.reward||"")}" placeholder="ice cream run, movie night, pick dinner, dinner with a friend..."></div>
+     <button type="button" class="btn small" id="m-save" data-mk="${mk}">Save</button>
+    </div>
+    <p class="muted" style="font-size:.8rem;margin:8px 0 0">Pick something you'd actually look forward to. Experiences beat stuff. Last month is a good guide for the number.</p>
+   </details>
+   ${hist.length?`<details class="mset"><summary>Past months</summary><div class="mhist">${hist.map(m=>`<div><span>${monthName(m.mk)}</span><span class="muted">${m.goal?`goal ${m.goal}${m.total>=m.goal?" ✓":""}`:""}</span><b>${m.total}</b></div>`).join("")}</div></details>`:""}
+  </div>`;
+}
+function routines(k){ const d=day(k); if(Array.isArray(d.routines))return d.routines; if(d.routine)return [{n:d.routineName||"Routine",t:d.routine}]; return [] }
+function setRoutine(k,name,tier){ const arr=routines(k).filter(r=>r.n!==name); if(tier)arr.push({n:name,t:tier}); set(k,"routines",arr); set(k,"routine",null); set(k,"routineName",null) }
+function renderItem(it,v){
+  if(it.hidden)return "";
+  if(it.kind==="multi")v=routines(viewDay);
+  const pts=itemPoints(it,v), done=pts>0;
+  let control="";
+  if(it.kind==="check")control=`<button class="check" role="checkbox" aria-checked="${!!v}" data-check="${it.id}">${CHECK}</button>`;
+  else if(it.kind==="auto")control=`<button class="check" role="checkbox" aria-checked="${!!v}" disabled>${CHECK}</button>`;
+  else if(it.kind==="tier")control=`<button class="check" role="checkbox" aria-checked="${!!v}" data-tier-clear="${it.id}">${CHECK}</button>`;
+  else if(it.kind==="sport")control=`<button class="check" role="checkbox" aria-checked="${!!v}" data-sport-clear="${it.id}">${CHECK}</button>`;
+  else if(it.kind==="multi")control=`<button class="check" role="checkbox" aria-checked="${done}" disabled>${CHECK}</button>`;
+  else control=`<button class="check" role="checkbox" aria-checked="${done}" disabled>${CHECK}</button>`;
+  let extra="";
+  if(it.kind==="tier")extra=`<div class="seg" style="margin-top:6px">${it.opts.map(o=>`<button type="button" aria-pressed="${v===o[0]}" data-tier="${it.id}" data-v="${o[0]}">${o[0]}</button>`).join("")}</div>`;
+  if(it.kind==="multi")extra=`<div class="chips" style="margin-top:6px">${v.map(r=>`<button type="button" class="chip" aria-pressed="true" data-rdel="${esc(r.n)}">${esc(r.n)} · ${r.t} ×</button>`).join("")}${v.length?"":`<button type="button" class="chip" data-tab-go="fifteen">Pick one on 15 Min →</button>`}</div>`;
+  if(it.kind==="count")extra=`<div class="seg" style="margin-top:6px">${[1,2,3].map(n=>`<button type="button" aria-pressed="${Number(v)===n}" data-count="${it.id}" data-v="${n}">${n}</button>`).join("")}</div>`;
+  if(it.kind==="hours")extra=`<input type="number" inputmode="decimal" min="0" max="14" step="0.5" value="${v||""}" placeholder="hrs" data-hours="${it.id}" style="width:80px;margin-top:6px" aria-label="Hours slept">`;
+  if(it.kind==="sport")extra=`<select data-sport="${it.id}" style="margin-top:6px;width:auto" aria-label="Which sport"><option value="">Which sport?</option>${SPORTS.map(s=>`<option ${v===s?"selected":""}>${s}</option>`).join("")}</select>`;
+  const dn=day(viewDay); const nm=it.kind==="tier"&&dn[it.id+"Name"]&&dn[it.id]?`<small style="color:var(--green)">${esc(dn[it.id+"Name"])}</small>`:"";
+  return `<div class="item ${done?"done":""}">${control}<div class="t">${it.name}${nm||(it.sub?`<small>${it.sub}</small>`:"")}${extra}</div><div class="pts">${done?"+"+pts:(it.pts?it.pts:it.kind==="tier"?"3–5":it.kind==="multi"?"3–6":it.kind==="count"?"1–3":"2–3")}</div></div>`;
+}
+
+function viewReflect(){
+  const k=viewDay, d=day(k), L=lesson(k);
+  const entries=allKeys().filter(c=>day(c).reflect).reverse().slice(0,30);
+  let low=0,c=today(); while((Number(day(c).mood)||5)<=2&&day(c).mood){low++;c=addDays(c,-1);if(low>10)break}
+  const fac=Array.isArray(d.factors)?d.factors:[];
+  const P=patterns();
+  return `<div class="eyebrow">Reflect · ${fmt(k)}</div>
+  <div class="reflect-wrap" style="margin-top:10px">
+  <div class="eyebrow">Lesson ${lessonIdx(k)+1} of ${LESSONS.length}: ${L.t}</div>
+  <h1 style="font-size:1.6rem">${L.q}</h1>
+  <p class="lesson" style="padding:0;margin-top:8px">${L.l}</p>
+  <div class="eyebrow" style="margin-top:18px">Your line</div>
+  <div class="prompt">${L.p}</div>
+  <textarea id="r-text" placeholder="A sentence is enough">${esc(d.reflectText||"")}</textarea>
+  <div class="eyebrow" style="margin-top:16px">10-second check-in</div>
+  <div class="sliders">
+   ${[["energy","Energy"],["mood","Mood"],["stress","Calm"]].map(s=>`<label class="slider"><span>${s[1]}</span><input type="range" min="1" max="5" value="${d[s[0]]||3}" data-slide="${s[0]}"><span id="v-${s[0]}">${d[s[0]]||3}</span></label>`).join("")}
+  </div>
+  <div class="eyebrow">What was today like?</div>
+  <p class="muted" style="font-size:.85rem;margin:2px 0 8px">Tap everything that applied. Over time this shows what makes your good days good.</p>
+  <div class="chips">${FACTORS.map(f=>`<button type="button" class="chip" aria-pressed="${fac.includes(f)}" data-factor="${f}">${f}</button>`).join("")}</div>
+  <input id="r-note" type="text" placeholder="Anything else about today?" value="${esc(d.dayNote||"")}" style="margin-top:8px" aria-label="Anything else about today">
+  <button class="btn" id="r-save" type="button" style="margin-top:14px">${d.reflect?"Update entry":"Save entry  +2"}</button>
+  ${d.reflect?`<span class="muted" style="margin-left:10px;font-size:.9rem">Checked off on Today ✓</span>`:""}
+  ${low>=3?`<div class="gentle">Three low days in a row. Tough stretches happen to every athlete. Talk to someone you trust about it. That's what strong people do.</div>`:""}
+  </div>
+  <h2>Your patterns</h2>
+  <div class="reflect-wrap">
+  ${P?`<p class="muted" style="font-size:.9rem">From ${P.n} check-ins. Average energy on days you tapped a thing versus days you didn't.</p>
+   ${P.up.length?`<div class="pat up"><span class="eyebrow">Good-day ingredients</span>${P.up.map(o=>`<div><b>${o.f}</b> <span class="muted">+${o.diff.toFixed(1)} energy</span></div>`).join("")}</div>`:""}
+   ${P.down.length?`<div class="pat down"><span class="eyebrow">Energy drains</span>${P.down.map(o=>`<div><b>${o.f}</b> <span class="muted">${o.diff.toFixed(1)} energy</span></div>`).join("")}</div>`:""}
+   ${!P.up.length&&!P.down.length?`<p class="muted">Nothing clear yet. Keep tapping, patterns show up after a few weeks.</p>`:""}`
+  :`<p class="muted">After about a week of check-ins, this spot will start showing which things line up with your best days and your worst ones.</p>`}
+  </div>
+  <h2>Past entries</h2>
+  <div class="reflect-wrap">
+  ${entries.length?entries.map(c=>`<div class="entry"><div class="q">${fmt(c)} · ${lesson(c).p}</div>${esc(day(c).reflectText||"")}${day(c).dayNote?`<div class="q" style="margin-top:4px">${esc(day(c).dayNote)}</div>`:""}</div>`).join(""):`<p class="muted">Nothing yet. Today's a good day to start.</p>`}
+  </div>`;
+}
+
+const ROUTINES=[
+ {g:"Hitting",items:[
+  {n:"Tee progression",eq:"tee, net, 3 buckets of balls, PVC pipe, basement",plan:"3 min warm-up: YTWLs, arm circles, trunk twists, squats, jumping jacks, about 30 seconds each. Then 10 slow dry swings and tee work, one bucket at a time: top hand only, bottom hand only, PVC mechanics in slow motion, 90s, crossover, full swing. Finish with crossover and full swing until the last bucket is gone. Every ball hard into the net."}
+ ]},
+ {g:"Pitching",items:[
+  {n:"Warm-up and mechanics",eq:"ball, net, mirror, basement",plan:"3 min warm-up: YTWLs, arm circles, trunk twists, squats, jumping jacks, about 30 seconds each. Then a few slow full motions with no ball, wrist flicks into the net, ball-and-knee timing drill, full motion into the net watching yourself in the mirror."},
+  {n:"Pitching bonus: 30 pitches",eq:"ball, net or catcher, strike-zone target",plan:"3 min warm-up, then 30 pitches at a target, every one at a spot you call before you throw. Count the strikes and put the number in below. Bonus point: throw the 30 again with your change-up.",strikes:true,bonus:"changeup"}
+ ]},
+ {g:"Catching",items:[
+  {n:"Catching mechanics",eq:"gear optional, ball, basement wall",plan:"3 min warm-up: YTWLs, arm circles, trunk twists, squats, jumping jacks, about 30 seconds each. Then work through each catcher stance and hold it. Receiving off the wall: bounce it and stick it low, middle, inside, outside, quiet glove. Then blocking off the wall: center, right, left, chest over the ball, nothing gets by."}
+ ]},
+ {g:"Throwing",items:[
+  {n:"Throwing progressions",eq:"ball, net, basement",plan:"3 min warm-up: YTWLs, arm circles, trunk twists, squats, jumping jacks, about 30 seconds each. Then work through the throwing progressions the way we do in warm-up and practice, into the net: knees, one knee, standing feet set, rocker step, crow hop. 15 to 20 throws each stage, full effort by the end."}
+ ]},
+ {g:"Wall ball",items:[
+  {n:"Wall ball circuit",eq:"tennis ball or softball, basement wall",plan:"3 min warm-up: YTWLs, arm circles, trunk twists, squats, jumping jacks, about 30 seconds each. Then 3 min two hands, fundamentals. 3 min backhand only. 2 min short hops, throw it hard at the base of the wall and pick it. 2 min reaction: throw, turn around, turn back, catch. 2 min glove-hand only, catch it in the pocket."}
+ ]},
+ {g:"Speed and explosive",items:[
+  {n:"Basement explosive circuit",eq:"a few feet of space, a low step or box if you have one",plan:"3 min warm-up: YTWLs, arm circles, trunk twists, squats, jumping jacks, about 30 seconds each. Then high knees, butt kicks and A-skips in place for a minute, then 3 rounds, 30 seconds on, 20 seconds off: split-squat jumps, lateral bounds and stick the landing, squat jumps for height, quick feet on a line, 3-step sprint starts into the wall (explode out of a base-running lead and stop at the wall). Form first: tall posture, knees driving, land soft and quiet."}
+ ]},
+ {g:"Move, recover and workouts",note:"Your own workout, on the days you don't have the strength coach and on the days you do. 15 min is 3 points, 20 is 4, 30 is 5.",items:[
+  {n:"Peloton yoga",eq:"Peloton app, mat",plan:"Pick a 15-minute flow. Hips, hamstrings and shoulders are where softball players get tight. Slow breathing counts as mental training too."},
+  {n:"Peloton stretch",eq:"Peloton app, mat",plan:"A 15-minute full-body or lower-body stretch class. Best right after training or before bed."},
+  {n:"Peloton pilates",eq:"Peloton app, mat",plan:"A 15-minute core or full-body class. Core strength is what connects your legs to your bat and your arm."},
+  {n:"Peloton strength",eq:"Peloton app, light dumbbells optional",plan:"A 15-minute bodyweight or light-weight strength class. Lower body or core are the best picks for softball. Not a replacement for the strength coach, a bonus on off days."},
+  {n:"Day-one arm care",eq:"bands",plan:"The day-one arm care routine from your player workbook. Do it on the days you throw and the days you don't.",wb:true},
+  {n:"Day-two strength workout",eq:"per the workbook",plan:"The day-two strength workout from your player workbook. Do it as written, with the warm-up.",wb:true},
+  {n:"Day-three mobility and hitting",eq:"mat, bat",plan:"The day-three mobility and hitting routine from your player workbook. Work through it exactly as the book lays it out.",wb:true},
+  {n:"Pitcher's bonus workout",eq:"per the workbook",plan:"The pitcher's bonus workout from your player workbook. Follow it as written.",wb:true},
+
+  {n:"Catcher's bonus workout",eq:"per the workbook",plan:"The catcher's bonus workout from your player workbook. Follow it as written.",wb:true}
+ ]}
+];
+function viewFifteen(){
+  const k=viewDay, d=day(k);
+  return `<div class="eyebrow">15 minutes</div>
+  <h1>Before school beats after practice</h1>
+  <div class="reflect-wrap" style="margin-top:8px"><p class="lede" style="margin:0 0 8px">Fifteen minutes before you leave for school is the best slot you'll ever find. You're not tired, nothing has gone wrong yet, and it's done before the day gets busy. Fifteen minutes a day is 90 hours a year that nobody else is doing.</p>
+  <p class="muted">Tap how long you went and it logs to Today. Do two different skill routines in a day and you get a bonus point. ${routines(k).length?`<b>Today: ${routines(k).map(x=>esc(x.n)+" "+x.t).join(", ")}.</b>`:""} ${d.mobility?`<b>Workout: ${esc(d.mobilityName||"")} ${d.mobility}.</b>`:""}</p></div>
+  ${ROUTINES.map((g,i)=>`${i===0?`<h2 style="margin-top:22px">Skill routines <span class="muted" style="font-weight:500;font-size:.9rem">→ Skill on Today</span></h2>`:""}${g.g==="Move, recover and workouts"?`<h2 style="margin-top:30px">Workouts <span class="muted" style="font-weight:500;font-size:.9rem">→ Strength on Today</span></h2><p class="muted" style="font-size:.9rem">Do one of these and a skill routine on the same day and both count.</p>`:""}<section class="bucket"><div class="bucket-head"><h3>${g.g}</h3></div>${g.note?`<p class="muted" style="font-size:.85rem">${g.note}</p>`:""}
+   ${g.items.map(r=>{const mob=g.g==="Move, recover and workouts";return `<div class="rt"><div class="rt-head"><b>${r.n}</b><div class="seg">${[["15 min",3],["20 min",4],["30 min",5]].map(o=>{const on=mob?(d.mobility===o[0]&&d.mobilityName===r.n):routines(k).some(x=>x.n===r.n&&x.t===o[0]);return `<button type="button" aria-pressed="${on}" data-${mob?"tier":"rt"}="${mob?"mobility":o[0]}" data-v="${o[0]}" data-rname="${esc(r.n)}">${o[0]} +${o[1]}</button>`}).join("")}</div></div><div class="muted" style="font-size:.82rem">Needs: ${r.eq}</div><p style="margin:6px 0 0;font-size:.93rem">${r.plan}</p>${r.wb?`<div class="muted" style="font-size:.8rem;margin-top:4px">Open your player workbook for the steps.</div>`:""}${r.strikes?`<div class="row" style="margin-top:8px"><span style="width:84px" class="muted">Fastball</span><input type="number" inputmode="numeric" min="0" max="30" placeholder="strikes" value="${d.strikes!=null?d.strikes:""}" data-strikes="strikes" style="width:90px" aria-label="Fastball strikes out of 30"><span class="muted">of 30${d.strikes!=null?` · ${Math.round(100*d.strikes/30)}%`:""}</span>${d.strikes!=null?`<button type="button" class="btn ghost small" data-logstrike="strike" data-pct="${Math.round(100*d.strikes/30)}">Save to Numbers</button>`:""}</div>
+   <div class="row" style="margin-top:6px"><span style="width:84px" class="muted">Change-up</span><input type="number" inputmode="numeric" min="0" max="30" placeholder="strikes" value="${d.cuStrikes!=null?d.cuStrikes:""}" data-strikes="cuStrikes" style="width:90px" aria-label="Change-up strikes out of 30"><span class="muted">of 30${d.cuStrikes!=null?` · ${Math.round(100*d.cuStrikes/30)}% · +1 bonus ✓`:" · +1 bonus"}</span>${d.cuStrikes!=null?`<button type="button" class="btn ghost small" data-logstrike="custrike" data-pct="${Math.round(100*d.cuStrikes/30)}">Save to Numbers</button>`:""}</div>`:""}</div>`}).join("")}</section>`).join("")}
+  <p class="muted" style="margin-top:20px;font-size:.85rem">Tap the time you actually did. 15 is the habit. 20 and 30 are a point each on top.</p>`;
+}
+
+/* ---------- recap ---------- */
+let recapMode="week";
+const MIN={"15 min":15,"20 min":20,"30 min":30};
+function periodKeys(k,mode){ let a,b; if(mode==="week"){a=weekStart(k);b=addDays(a,6)} else {a=monthKey(k)+"-01"; const d=parse(a); b=key(new Date(d.getFullYear(),d.getMonth()+1,0))} const out=[]; for(let c=a;c<=b;c=addDays(c,1))out.push(c); return out }
+function recapStats(ks){
+  const t=today(); const past=ks.filter(c=>c<=t); const logged=past.filter(c=>basePoints(c)>0);
+  const st={days:past.length,logged:logged.length,points:past.reduce((s,c)=>s+dayTotal(c),0),coach:0,workouts:0,workoutMin:0,routines:0,routineMin:0,practices:{},sweeps:0,reflects:0,plans:0,fed:0,water3:0,sleep:[],energy:[],mood:[],calm:[],strikes:[],cu:[],factorsHi:{},factorsLo:{},bestDay:null,bestPts:-1};
+  past.forEach(c=>{ const d=day(c); if(d.coach)st.coach++; if(d.mobility){st.workouts++;st.workoutMin+=MIN[d.mobility]||15} routines(c).forEach(r=>{st.routines++;st.routineMin+=MIN[r.t]||15}); if(d.practice)st.practices[d.practice]=(st.practices[d.practice]||0)+1;
+    if(cleanSweep(c))st.sweeps++; if(d.reflect)st.reflects++; if(d.plan)st.plans++; if(d.protein&&d.fruit&&d.veg)st.fed++; if(Number(d.water)>=3)st.water3++; if(d.hours)st.sleep.push(Number(d.hours));
+    if(d.energy){st.energy.push(d.energy);st.mood.push(d.mood||0);st.calm.push(d.stress||0); (d.factors||[]).forEach(f=>{ if(d.energy>=4)st.factorsHi[f]=(st.factorsHi[f]||0)+1; if(d.energy<=2)st.factorsLo[f]=(st.factorsLo[f]||0)+1 }) }
+    if(d.strikes!=null)st.strikes.push(d.strikes); if(d.cuStrikes!=null)st.cu.push(d.cuStrikes);
+    const p=dayTotal(c); if(p>st.bestPts){st.bestPts=p;st.bestDay=c} });
+  st.prs=0; METRICS.forEach(g=>g.items.forEach(m=>{ const r=(S.metrics[m.id]||[]).slice().sort((a,b)=>a.d<b.d?-1:1); r.forEach((e,i)=>{ if(i===0)return; const best=r.slice(0,i).reduce((b,x)=>m.lower?Math.min(b,x.v):Math.max(b,x.v),m.lower?Infinity:-Infinity); if(past.includes(e.d)&&(m.lower?e.v<best:e.v>best))st.prs++ }) }));
+  return st;
+}
+const avg=a=>a.length?a.reduce((s,x)=>s+x,0)/a.length:null;
+function top(obj,n){ return Object.entries(obj).sort((a,b)=>b[1]-a[1]).slice(0,n) }
+function viewRecap(){
+  const k=viewDay, mode=recapMode, ks=periodKeys(k,mode), st=recapStats(ks);
+  const label=mode==="week"?`Week of ${fmt(ks[0])}`:monthName(monthKey(k));
+  const weeks=mode==="week"?1:Math.max(1,st.days/7);
+  const hrs=m=>(m/60).toFixed(1);
+  const totalMin=st.routineMin+st.workoutMin+st.coach*60;
+  const practices=top(st.practices,6);
+  /* next-level pace, scaled to the days elapsed in the period */
+  const pace=[
+   ["Skill work","15 min every day",st.routineMin,st.days*15,"min"],
+   ["Strength coach","2 sessions a week",st.coach,Math.round(2*weeks),"sessions"],
+   ["Own workouts","2 a week",st.workouts,Math.round(2*weeks),"workouts"],
+   ["Sleep","9 hours a night",avg(st.sleep)||0,9,"hrs avg"],
+   ["Water","3 bottles a day",st.water3,st.days,"days"],
+   ["Reflection","every day",st.reflects,st.days,"days"],
+  ];
+  const bar=(v,t)=>{const p=t?Math.min(100,Math.round(100*v/t)):0;return `<div class="pbar"><div style="width:${p}%"></div></div>`};
+  const e=avg(st.energy),m=avg(st.mood),c=avg(st.calm);
+  const hi=top(st.factorsHi,3),lo=top(st.factorsLo,3);
+  const prev=mode==="week"?weekTotal(addDays(ks[0],-1)):monthTotal(addDays(ks[0],-1));
+  return `<div class="eyebrow">Recap</div>
+  <div class="row" style="justify-content:space-between;margin:6px 0 2px"><h1 style="font-size:1.5rem">${label}</h1><div class="seg"><button type="button" aria-pressed="${mode==="week"}" data-recap="week">Week</button><button type="button" aria-pressed="${mode==="month"}" data-recap="month">Month</button></div></div>
+  <div class="daynav"><button data-nav="${mode==="week"?-7:-30}" aria-label="Previous">‹</button><span class="muted" style="font-size:.85rem">${st.logged} of ${st.days} days logged</span><button data-nav="${mode==="week"?7:30}" ${k>=today()?"disabled":""} aria-label="Next">›</button></div>
+
+  <section class="bucket"><div class="bucket-head"><h3>What you did</h3><span class="streak">${st.points} pts${prev?` · last ${mode} ${prev}`:""}</span></div>
+   <div class="rgrid">
+    <div><b>${st.coach}</b><span>coach sessions</span></div>
+    <div><b>${st.routines}</b><span>skill routines · ${hrs(st.routineMin)} h</span></div>
+    <div><b>${st.workouts}</b><span>own workouts · ${hrs(st.workoutMin)} h</span></div>
+    <div><b>${Object.values(st.practices).reduce((a,b)=>a+b,0)}</b><span>practices${practices.length?": "+practices.map(p=>p[0]+" "+p[1]).join(", "):""}</span></div>
+    <div><b>${st.sweeps}</b><span>clean sweeps</span></div>
+    <div><b>${st.prs}</b><span>personal records</span></div>
+    <div><b>${st.fed}</b><span>days with protein, fruit and veggie</span></div>
+    <div><b>${st.plans}</b><span>Sunday plans</span></div>
+   </div>
+   ${st.strikes.length?`<p class="muted" style="font-size:.88rem;margin:8px 0 0">Pitching: ${st.strikes.length} bonus session${st.strikes.length>1?"s":""}, fastball ${Math.round(100*avg(st.strikes)/30)}% strikes${st.cu.length?`, change-up ${Math.round(100*avg(st.cu)/30)}%`:""}.</p>`:""}
+   ${st.bestDay&&st.bestPts>0?`<p class="muted" style="font-size:.88rem;margin:6px 0 4px">Best day: ${fmt(st.bestDay)}, ${st.bestPts} points.</p>`:""}
+  </section>
+
+  <section class="bucket"><div class="bucket-head"><h3>How you felt</h3><span class="streak">${st.energy.length} check-ins</span></div>
+   ${st.energy.length?`<div class="rgrid three">
+    <div><b>${e.toFixed(1)}</b><span>energy</span></div><div><b>${m.toFixed(1)}</b><span>mood</span></div><div><b>${c.toFixed(1)}</b><span>calm</span></div></div>
+    ${st.sleep.length?`<p class="muted" style="font-size:.88rem;margin:8px 0 0">Average sleep ${avg(st.sleep).toFixed(1)} hours. ${avg(st.sleep)>=9?"That's next-level sleep.":avg(st.sleep)>=8?"Solid. Nine is the target.":"Under eight. That's the first thing to fix, and it's the easiest."}</p>`:""}
+    ${hi.length?`<p style="font-size:.9rem;margin:8px 0 0"><span class="eyebrow" style="color:var(--green)">On high-energy days</span><br>${hi.map(x=>x[0]+" ("+x[1]+")").join(" · ")}</p>`:""}
+    ${lo.length?`<p style="font-size:.9rem;margin:8px 0 0"><span class="eyebrow" style="color:var(--accent)">On low-energy days</span><br>${lo.map(x=>x[0]+" ("+x[1]+")").join(" · ")}</p>`:""}
+    ${!hi.length&&!lo.length?`<p class="muted" style="font-size:.88rem;margin:8px 0 0">Tap the "what was today like" chips when you reflect and this will start showing what your best days have in common.</p>`:""}`
+   :`<p class="muted" style="font-size:.9rem">No check-ins this ${mode} yet. The sliders on Reflect take ten seconds.</p>`}
+  </section>
+
+  <section class="bucket"><div class="bucket-head"><h3>Time in vs. what it takes</h3><span class="streak">${hrs(totalMin)} h of work</span></div>
+   <p class="muted" style="font-size:.85rem;margin:0 0 8px">${hrs(st.routineMin)} h skill, ${hrs(st.workoutMin)} h own workouts, ${st.coach} h with the coach. Not counting practices and games. The bars are you against the pace the next level runs at, scaled to ${st.days} day${st.days===1?"":"s"}.</p>
+   ${pace.map(p=>{const v=p[2],t=p[3];const pct=t?Math.min(100,Math.round(100*v/t)):0;return `<div class="pace"><div class="pl"><b>${p[0]}</b><span class="muted">${p[1]}</span></div>${bar(v,t)}<div class="pv">${typeof v==="number"&&!Number.isInteger(v)?v.toFixed(1):v} / ${t} ${p[4]} · ${pct}%</div></div>`}).join("")}
+   <p class="muted" style="font-size:.85rem;margin:10px 0 0">${paceLine(pace)}</p>
+  </section>`;
+}
+function paceLine(pace){
+  const pct=pace.map(p=>p[3]?Math.min(100,100*p[2]/p[3]):0); const avgP=pct.reduce((a,b)=>a+b,0)/pct.length;
+  const weakest=pace[pct.indexOf(Math.min(...pct))][0];
+  if(avgP>=90)return "You're training at next-level pace. Keep it exactly like this.";
+  if(avgP>=70)return `Close to pace. The biggest gap is ${weakest.toLowerCase()}. That's the one thing to focus on.`;
+  if(avgP>=45)return `About halfway to pace. Pick one bar, probably ${weakest.toLowerCase()}, and move it next ${recapMode}. One at a time.`;
+  return `Early days. Don't try to fix every bar. Start with ${weakest.toLowerCase()} and let the rest follow.`;
+}
+function viewNumbers(){
+  const age=S.profile.age;
+  const groups=METRICS;
+  return `<div class="eyebrow">Numbers · ${age}</div>
+  <h1>Where you are</h1>
+  <div class="reflect-wrap" style="margin-top:8px"><p class="muted" style="margin:0 0 6px">Check these every few weeks, not every day. The shaded band is the range for your age. Your line is the only thing that matters.</p>
+  <p class="muted" style="font-size:.85rem;margin:0">At 13 and 14, growing changes these numbers more than anything. If you haven't had your growth spurt, you're not behind.</p></div>
+  <details class="bench"><summary>Benchmarks by level, 10U to college</summary>
+   <p class="muted" style="font-size:.85rem;margin:8px 0">Typical to good at each level. The top of each range is where a player stands out. Nobody expects a 12U to be anywhere near the right column; it's there so you can see the road.</p>
+   <div style="overflow-x:auto"><table><thead><tr><th>Metric</th><th>10U</th><th>12U</th><th>14U</th><th>HS varsity</th><th>College D1</th></tr></thead><tbody>${BENCH.map(r=>`<tr>${r.map((c,i)=>i?`<td>${c}</td>`:`<th>${c}</th>`).join("")}</tr>`).join("")}</tbody></table></div>
+  </details>
+  ${groups.map(g=>`<h2>${g.g}</h2>${g.items.map(m=>renderMetric(m,age)).join("")}`).join("")}`;
+}
+function renderMetric(m,profAge){
+  const age=(S.bandSel&&S.bandSel[m.id])||profAge;
+  const LV={"10U":"10U","12U":"12U","14U":"14U","HS":"HS","COL":"College"};
+  const rows=(S.metrics[m.id]||[]).slice().sort((a,b)=>a.d<b.d?-1:1);
+  const last=rows[rows.length-1];
+  const band=m.band?BANDS[m.band][age]:null;
+  let bandTxt="";
+  if(band)bandTxt=m.lower?`<div class="band">${LV[age]}: good under <b>${band[1]}</b> · elite under <b>${band[2]}</b> · typical around ${band[0]}</div>`:`<div class="band">${LV[age]}: average <b>${band[0]}</b> · good <b>${band[1]}</b> · elite <b>${band[2]}</b></div>`;
+  const sel=m.band?`<div class="seg" style="margin-top:6px">${Object.keys(LV).map(l=>`<button type="button" aria-pressed="${age===l}" data-band="${m.id}" data-v="${l}">${LV[l]}</button>`).join("")}</div>`:"";
+  return `<div class="metric"><div class="top"><h3>${m.name}</h3><div class="cur">${last?last.v:"—"} <small>${m.unit}</small></div></div>${sel}${bandTxt}${m.how?`<div class="band">How: ${m.how}</div>`:""}
+   ${chart(rows,band,m)}
+   <div class="add"><input type="date" value="${today()}" data-mdate="${m.id}" aria-label="Date"><input type="number" inputmode="decimal" step="${m.step}" placeholder="${m.unit}" data-mval="${m.id}" aria-label="Value"><button class="btn" data-madd="${m.id}" type="button">Add</button></div>
+   ${rows.length?`<div class="log">${rows.slice(-6).map((r,i)=>`<span>${r.d.slice(5)} <b>${r.v}</b><button data-mdel="${m.id}" data-i="${rows.length-Math.min(6,rows.length)+i}" aria-label="Delete">×</button></span>`).join("")}</div>`:""}
+  </div>`;
+}
+function chart(rows,band,m){
+  const W=320,H=120,px=28,py=12;
+  const vals=rows.map(r=>Number(r.v));
+  let lo=Math.min(...vals.concat(band?[band[0],band[2]]:[])), hi=Math.max(...vals.concat(band?[band[0],band[2]]:[]));
+  if(!isFinite(lo)){lo=0;hi=1}
+  if(hi-lo<1){hi+=1;lo-=1}
+  const pad=(hi-lo)*0.15; lo-=pad; hi+=pad;
+  const y=v=>py+(H-2*py)*(1-(v-lo)/(hi-lo));
+  const x=i=>rows.length<2?W/2:px+(W-2*px)*i/(rows.length-1);
+  let s=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${m.name} over time">`;
+  if(band){ const a=y(m.lower?band[0]:band[1]), b=y(band[2]); const top=Math.min(a,b),bot=Math.max(a,b);
+    s+=`<rect x="${px}" y="${top}" width="${W-2*px}" height="${Math.max(2,bot-top)}" fill="var(--green)" opacity=".15"/><text x="${W-px+3}" y="${top+10}" font-size="9" fill="var(--muted)">${m.lower?"good":"good"}</text><text x="${W-px+3}" y="${bot+(m.lower?-2:10)}" font-size="9" fill="var(--muted)">${m.lower?"elite":"elite"}</text>`;
+    if(m.lower)s+=`<line x1="${px}" x2="${W-px}" y1="${y(band[2])}" y2="${y(band[2])}" stroke="var(--green)" stroke-width="1" stroke-dasharray="3 3"/>`;
+  }
+  s+=`<line x1="${px}" x2="${px}" y1="${py}" y2="${H-py}" stroke="var(--line)"/>`;
+  s+=`<text x="2" y="${py+4}" font-size="9" fill="var(--muted)">${(hi-pad).toFixed(m.step<1?1:0)}</text><text x="2" y="${H-py}" font-size="9" fill="var(--muted)">${(lo+pad).toFixed(m.step<1?1:0)}</text>`;
+  if(rows.length){
+    const pts=rows.map((r,i)=>`${x(i)},${y(Number(r.v))}`).join(" ");
+    if(rows.length>1)s+=`<polyline points="${pts}" fill="none" stroke="var(--accent)" stroke-width="2.5" stroke-linejoin="round"/>`;
+    rows.forEach((r,i)=>{s+=`<circle cx="${x(i)}" cy="${y(Number(r.v))}" r="${i===rows.length-1?4.5:3}" fill="var(--accent)"/>`});
+  } else s+=`<text x="${W/2}" y="${H/2}" text-anchor="middle" font-size="11" fill="var(--muted)">No entries yet</text>`;
+  return s+`</svg>`;
+}
+
+/* ---------- events ---------- */
+app.addEventListener("click",e=>{
+  const t=e.target.closest("button"); if(!t)return;
+  const k=viewDay;
+  if(t.dataset.nav){ viewDay=addDays(viewDay,Number(t.dataset.nav)); if(viewDay>today())viewDay=today(); render(); return }
+  if(t.dataset.tabGo){ tab=t.dataset.tabGo; render(); window.scrollTo(0,0); return }
+    if(t.dataset.factor){ const d=day(k); const f=Array.isArray(d.factors)?d.factors.slice():[]; const i=f.indexOf(t.dataset.factor); if(i>=0)f.splice(i,1); else f.push(t.dataset.factor); set(k,"factors",f); t.setAttribute("aria-pressed",i<0); return }
+  if(t.dataset.check){ const d=day(k); set(k,t.dataset.check,!d[t.dataset.check]); render(); return }
+  if(t.dataset.rt){ const on=routines(k).some(x=>x.n===t.dataset.rname&&x.t===t.dataset.rt); setRoutine(k,t.dataset.rname,on?null:t.dataset.rt); toast(on?"Removed":"Logged on Today"); render(); return }
+  if(t.dataset.rdel){ setRoutine(k,t.dataset.rdel,null); render(); return }
+  if(t.dataset.logstrike){ const id=t.dataset.logstrike; (S.metrics[id]=S.metrics[id]||[]).push({d:k,v:Number(t.dataset.pct)}); save(); toast("Saved to Numbers"); render(); return }
+  if(t.dataset.tier){ set(k,t.dataset.tier,t.dataset.v); if(t.dataset.rname)set(k,t.dataset.tier+"Name",t.dataset.rname); if(tab==="fifteen")toast("Logged on Today"); render(); return }
+  if(t.dataset.tierClear){ set(k,t.dataset.tierClear,null); set(k,t.dataset.tierClear+"Name",null); render(); return }
+  if(t.dataset.count){ const d=day(k); set(k,t.dataset.count,Number(d[t.dataset.count])===Number(t.dataset.v)?0:Number(t.dataset.v)); render(); return }
+  if(t.dataset.sportClear){ set(k,t.dataset.sportClear,null); render(); return }
+  if(t.closest("#s-pitch,#p-pitch,#s-catch,#p-catch")){ const seg=t.closest(".seg"); seg.querySelectorAll("button").forEach(b=>b.setAttribute("aria-pressed",b===t)); if(seg.id==="p-pitch"){S.profile.pitcher=t.dataset.v==="1";save();render()} if(seg.id==="p-catch"){S.profile.catcher=t.dataset.v==="1";save();render()} return }
+  if(t.id==="r-save"){ const txt=document.getElementById("r-text").value.trim(); if(!txt){toast("Write a line first");return}
+    set(k,"lessonIdx",lessonIdx(k)); set(k,"reflectText",txt); set(k,"reflect",true); set(k,"dayNote",document.getElementById("r-note").value.trim()); ["energy","mood","stress"].forEach(s=>{const el=document.querySelector(`[data-slide="${s}"]`); set(k,s,Number(el.value))}); toast("Saved  +2"); render(); return }
+  if(t.id==="m-save"){ const mk=t.dataset.mk; S.months[mk]={goal:Number(document.getElementById("m-goal").value)||0,reward:document.getElementById("m-reward").value.trim()}; save(); toast("Saved"); render(); return }
+  if(t.dataset.recap){ recapMode=t.dataset.recap; render(); return }
+  if(t.dataset.band){ S.bandSel=S.bandSel||{}; S.bandSel[t.dataset.band]=t.dataset.v; save(); render(); return }
+  if(t.dataset.madd){ const id=t.dataset.madd; const v=document.querySelector(`[data-mval="${id}"]`).value, dt=document.querySelector(`[data-mdate="${id}"]`).value; if(!v||!dt){toast("Need a date and a number");return}
+    (S.metrics[id]=S.metrics[id]||[]).push({d:dt,v:Number(v)}); save(); toast("Logged"); render(); return }
+  if(t.dataset.mdel){ const rows=(S.metrics[t.dataset.mdel]||[]).sort((a,b)=>a.d<b.d?-1:1); rows.splice(Number(t.dataset.i),1); S.metrics[t.dataset.mdel]=rows; save(); render(); return }
+  if(t.id==="bn-done"){ S.bannerDone=t.dataset.stamp; save(); render(); return }
+  if(t.id==="bn-copy"){ const txt=JSON.stringify(S); const done=()=>{toast("Backup copied. Paste it into a note.")}; if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(txt).then(done).catch(()=>{document.querySelector(".settings").open=true;showBackup(txt)})}else{document.querySelector(".settings").open=true;showBackup(txt)} return }
+  if(t.id==="bk-copy"){ const txt=JSON.stringify(S); const done=()=>toast("Backup copied"); if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(txt).then(done).catch(()=>{showBackup(txt)})}else showBackup(txt); return }
+  if(t.id==="bk-show"){ document.getElementById("bk-area").hidden=false; return }
+  if(t.id==="bk-restore"){ try{ const o=JSON.parse(document.getElementById("bk-text").value); if(!o.days)throw 0; S=o; save(); toast("Restored"); render() }catch(err){ toast("That doesn't look like a backup") } return }
+});
+function showBackup(txt){ const a=document.getElementById("bk-area"); a.hidden=false; const ta=document.getElementById("bk-text"); ta.value=txt; ta.select(); toast("Select all and copy") }
+app.addEventListener("change",e=>{
+  const el=e.target, k=viewDay;
+  if(el.dataset.hours!=null){ set(k,"hours",el.value?Number(el.value):null); render(); return }
+  if(el.dataset.sport!=null){ set(k,"practice",el.value||null); render(); return }
+  if(el.dataset.strikes){ const f=el.dataset.strikes; const v=el.value===""?null:Math.min(30,Number(el.value)||0); set(k,f,v); if(f==="cuStrikes")set(k,"changeup",v!=null); render(); return }
+  if(el.id==="p-age"){ S.profile.age=el.value; save(); render(); return }
+});
+app.addEventListener("input",e=>{ const el=e.target; if(el.dataset.slide){ document.getElementById("v-"+el.dataset.slide).textContent=el.value } });
+app.addEventListener("submit",e=>{
+  if(e.target.id!=="setup")return; e.preventDefault();
+  const name=document.getElementById("s-name").value.trim(); if(!name)return;
+  S.profile={name,age:document.getElementById("s-age").value,pitcher:document.querySelector('#s-pitch button[aria-pressed="true"]').dataset.v==="1",catcher:document.querySelector('#s-catch button[aria-pressed="true"]').dataset.v==="1"};
+  save(); tab="start"; render();
+});
+
+render();
+})();
+</script>
+
+</body>
+</html>
