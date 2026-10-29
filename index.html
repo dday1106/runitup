@@ -20,26 +20,27 @@
 :root{
   --bg:#f2f4f0; --panel:#ffffff; --fg:#15211a; --muted:#5d6b63; --line:#d6ddd7;
   --accent:#b24f26; --accent-ink:#ffffff; --gold:#c9961c; --green:#1e6b4a; --soft:#e7ebe6;
-  --grass-a:#dfe8d9; --grass-b:#d3dfcb; --dirt:#d9a77a; --dirt2:#c98f5e; --chalkline:#ffffff; --ballc:#f3e74a; --stitch:#c43f2b;
+  --grass-a:#dfe8d9; --grass-b:#d3dfcb; --dirt:#dcb48e; --dirt2:#e7c7a6; --chalkline:#ffffff; --ballc:#f3e74a; --stitch:#c43f2b;
   --display:"Bricolage Grotesque","Avenir Next",Helvetica,Arial,sans-serif;
   --body:"Instrument Sans","Helvetica Neue",Helvetica,Arial,sans-serif;
 }
 @media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
   --bg:#101613; --panel:#19221d; --fg:#eef2ee; --muted:#9fb0a6; --line:#2b3730;
   --accent:#e2744a; --accent-ink:#1a0f09; --gold:#e3b23e; --green:#4fb98a; --soft:#223029;
-  --grass-a:#131b16; --grass-b:#0f1612; --dirt:#4a3528; --dirt2:#3b2a20; --chalkline:#3a4a40; --ballc:#9b9535; --stitch:#7d3324; color-scheme:dark }}
+  --grass-a:#131b16; --grass-b:#0f1612; --dirt:#3d2e24; --dirt2:#4b3a2d; --chalkline:#3a4a40; --ballc:#9b9535; --stitch:#7d3324; color-scheme:dark }}
 :root[data-theme="dark"]{
   --bg:#101613; --panel:#19221d; --fg:#eef2ee; --muted:#9fb0a6; --line:#2b3730;
   --accent:#e2744a; --accent-ink:#1a0f09; --gold:#e3b23e; --green:#4fb98a; --soft:#223029;
-  --grass-a:#131b16; --grass-b:#0f1612; --dirt:#4a3528; --dirt2:#3b2a20; --chalkline:#3a4a40; --ballc:#9b9535; --stitch:#7d3324; color-scheme:dark }
+  --grass-a:#131b16; --grass-b:#0f1612; --dirt:#3d2e24; --dirt2:#4b3a2d; --chalkline:#3a4a40; --ballc:#9b9535; --stitch:#7d3324; color-scheme:dark }
 *{box-sizing:border-box}
 html,body{height:100%}
-body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--body);font-size:16px;line-height:1.5;display:flex;flex-direction:column;min-height:100%;
- background-image:repeating-linear-gradient(90deg, var(--grass-a) 0 64px, var(--grass-b) 64px 128px);background-attachment:fixed}
-.field{position:fixed;inset:0;z-index:-1;pointer-events:none;overflow:hidden}
-.field svg{position:absolute;left:50%;top:48%;width:min(140vw,980px);transform:translate(-50%,-45%)}
-.field .ball{position:absolute;right:-60px;top:-40px;width:230px;transform:rotate(-15deg);left:auto;opacity:.92}
-@media (max-width:600px){.field .ball{width:140px;right:-55px;top:-40px}}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--body);font-size:16px;line-height:1.5;display:flex;flex-direction:column;min-height:100%;position:relative;
+ background-image:repeating-linear-gradient(90deg, var(--grass-a) 0 64px, var(--grass-b) 64px 128px)}
+.field{position:absolute;inset:0;z-index:0;pointer-events:none;overflow:hidden}
+.field .infield{position:absolute;left:50%;top:140px;width:min(150vw,1100px);transform:translateX(-50%)}
+.field .ball{position:absolute;right:-60px;top:-70px;width:210px;transform:rotate(-15deg);opacity:.95}
+@media (max-width:600px){.field .ball{width:130px;right:-60px;top:-55px}.field .infield{top:120px;width:170vw}}
+main,.tabbar{position:relative;z-index:1}
 body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--bg)}
 main{flex:1;padding-block:14px 24px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));max-width:560px;width:100%;margin:0 auto}
 h1,h2,h3{font-family:var(--display);text-wrap:balance;margin:0;line-height:1.1}
@@ -211,28 +212,27 @@ details.settings summary{cursor:pointer;color:var(--muted);font-size:.9rem}
 </head>
 <body>
 <div class="field" aria-hidden="true">
- <svg viewBox="0 0 1000 900" xmlns="http://www.w3.org/2000/svg">
-  <!-- outfield arc of dirt -->
-  <path d="M500 860 L120 480 A540 540 0 0 1 880 480 Z" fill="var(--dirt)" opacity=".28"/>
-  <!-- grass inside the basepaths -->
-  <path d="M500 800 L240 540 L500 280 L760 540 Z" fill="var(--grass-a)" opacity=".9"/>
-  <!-- basepath dirt -->
-  <path d="M500 860 L170 530 L500 200 L830 530 Z M500 790 L250 540 L500 290 L750 540 Z" fill="var(--dirt2)" fill-rule="evenodd" opacity=".55"/>
-  <!-- pitcher's circle (softball) -->
-  <circle cx="500" cy="540" r="86" fill="var(--dirt)" opacity=".7"/>
-  <rect x="488" y="536" width="24" height="7" fill="var(--chalkline)" opacity=".9"/>
-  <!-- foul lines -->
-  <path d="M500 850 L60 410 M500 850 L940 410" stroke="var(--chalkline)" stroke-width="6" opacity=".8"/>
-  <!-- bases -->
-  <g fill="var(--chalkline)" opacity=".95">
-   <rect x="738" y="518" width="26" height="26" transform="rotate(45 751 531)"/>
-   <rect x="487" y="268" width="26" height="26" transform="rotate(45 500 281)"/>
-   <rect x="236" y="518" width="26" height="26" transform="rotate(45 249 531)"/>
-   <path d="M482 820 L518 820 L518 836 L500 854 L482 836 Z"/>
+ <svg class="infield" viewBox="0 0 1000 1000" xmlns="http://www.w3.org/2000/svg">
+  <!-- skinned infield: diamond plus an arc behind second, centered on the pitcher's plate -->
+  <path d="M500 900 L835 565 A335 335 0 0 0 165 565 Z" fill="var(--dirt)"/>
+  <!-- home plate circle and pitcher's circle -->
+  <circle cx="500" cy="880" r="105" fill="var(--dirt)"/>
+  <circle cx="500" cy="620" r="78" fill="var(--dirt2)"/>
+  <!-- foul lines, extending into the outfield -->
+  <path d="M500 900 L20 420 M500 900 L980 420" stroke="var(--chalkline)" stroke-width="5" opacity=".9"/>
+  <!-- basepaths -->
+  <path d="M500 900 L780 620 L500 340 L220 620 Z" fill="none" stroke="var(--chalkline)" stroke-width="3" opacity=".55"/>
+  <!-- bases and plate -->
+  <g fill="var(--chalkline)">
+   <rect x="767" y="607" width="26" height="26" transform="rotate(45 780 620)"/>
+   <rect x="487" y="327" width="26" height="26" transform="rotate(45 500 340)"/>
+   <rect x="207" y="607" width="26" height="26" transform="rotate(45 220 620)"/>
+   <path d="M484 884 L516 884 L516 898 L500 912 L484 898 Z"/>
+   <rect x="494" y="616" width="12" height="4"/>
   </g>
   <!-- batter's boxes -->
-  <g fill="none" stroke="var(--chalkline)" stroke-width="4" opacity=".8">
-   <rect x="430" y="800" width="36" height="60"/><rect x="534" y="800" width="36" height="60"/>
+  <g fill="none" stroke="var(--chalkline)" stroke-width="3" opacity=".85">
+   <rect x="436" y="866" width="34" height="62"/><rect x="530" y="866" width="34" height="62"/>
   </g>
  </svg>
  <svg class="ball" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
