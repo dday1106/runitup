@@ -27,19 +27,19 @@
 @media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
   --bg:#101613; --panel:#19221d; --fg:#eef2ee; --muted:#9fb0a6; --line:#2b3730;
   --accent:#e2744a; --accent-ink:#1a0f09; --gold:#e3b23e; --green:#4fb98a; --soft:#223029;
-  --grass-a:#131b16; --grass-b:#0f1612; --dirt:#3d2e24; --dirt2:#4b3a2d; --chalkline:#3a4a40; --ballc:#9b9535; --stitch:#7d3324; color-scheme:dark }}
+  --grass-a:#131b16; --grass-b:#0f1612; --dirt:#3d2e24; --dirt2:#4b3a2d; --chalkline:#c9d3cc; --ballc:#9b9535; --stitch:#7d3324; color-scheme:dark }}
 :root[data-theme="dark"]{
   --bg:#101613; --panel:#19221d; --fg:#eef2ee; --muted:#9fb0a6; --line:#2b3730;
   --accent:#e2744a; --accent-ink:#1a0f09; --gold:#e3b23e; --green:#4fb98a; --soft:#223029;
-  --grass-a:#131b16; --grass-b:#0f1612; --dirt:#3d2e24; --dirt2:#4b3a2d; --chalkline:#3a4a40; --ballc:#9b9535; --stitch:#7d3324; color-scheme:dark }
+  --grass-a:#131b16; --grass-b:#0f1612; --dirt:#3d2e24; --dirt2:#4b3a2d; --chalkline:#c9d3cc; --ballc:#9b9535; --stitch:#7d3324; color-scheme:dark }
 *{box-sizing:border-box}
 html,body{height:100%}
 body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--body);font-size:16px;line-height:1.5;display:flex;flex-direction:column;min-height:100%;position:relative;
  background-image:repeating-linear-gradient(90deg, var(--grass-a) 0 64px, var(--grass-b) 64px 128px)}
-.field{position:absolute;inset:0;z-index:0;pointer-events:none;overflow:hidden}
-.field .infield{position:absolute;left:50%;top:140px;width:min(150vw,1100px);transform:translateX(-50%)}
-.field .ball{position:absolute;right:-60px;top:-70px;width:210px;transform:rotate(-15deg);opacity:.95}
-@media (max-width:600px){.field .ball{width:130px;right:-60px;top:-55px}.field .infield{top:120px;width:170vw}}
+.backdrop{position:absolute;inset:0;z-index:0;pointer-events:none;overflow:hidden}
+.backdrop .infield{position:absolute;left:50%;top:140px;width:min(150vw,1100px);transform:translateX(-50%)}
+.backdrop .ball{position:absolute;right:-60px;top:-70px;width:210px;transform:rotate(-15deg);opacity:.95}
+@media (max-width:600px){.backdrop .ball{width:130px;right:-60px;top:-55px}.backdrop .infield{top:120px;width:170vw}}
 main,.tabbar{position:relative;z-index:1}
 body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--bg)}
 main{flex:1;padding-block:14px 24px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));max-width:560px;width:100%;margin:0 auto}
@@ -211,13 +211,14 @@ details.settings summary{cursor:pointer;color:var(--muted);font-size:.9rem}
 
 </head>
 <body>
-<div class="field" aria-hidden="true">
+<div class="backdrop" aria-hidden="true">
  <svg class="infield" viewBox="0 0 1000 1000" xmlns="http://www.w3.org/2000/svg">
   <!-- skinned infield: diamond plus an arc behind second, centered on the pitcher's plate -->
   <path d="M500 900 L835 565 A335 335 0 0 0 165 565 Z" fill="var(--dirt)"/>
   <!-- home plate circle and pitcher's circle -->
   <circle cx="500" cy="880" r="105" fill="var(--dirt)"/>
-  <circle cx="500" cy="620" r="78" fill="var(--dirt2)"/>
+  <circle cx="500" cy="620" r="78" fill="var(--dirt2)" stroke="var(--chalkline)" stroke-width="5"/>
+  <circle cx="500" cy="880" r="105" fill="none" stroke="var(--chalkline)" stroke-width="4" opacity=".7"/>
   <!-- foul lines, extending into the outfield -->
   <path d="M500 900 L20 420 M500 900 L980 420" stroke="var(--chalkline)" stroke-width="5" opacity=".9"/>
   <!-- basepaths -->
